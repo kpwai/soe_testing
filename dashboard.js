@@ -3,7 +3,7 @@
 // ===========================
 
 // Path to test CSV
-const dataPath = "data/tariff_data.csv";
+const dataPath = "data.csv";
 
 let tariffData = [];
 

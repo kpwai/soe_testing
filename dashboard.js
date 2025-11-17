@@ -4,7 +4,7 @@
 // =====================================
 
 // Path to CSV (adjust if needed)
-var dataPath = "data/tariff_data.csv";
+var dataPath = "data.csv";
 
 var tariffData = [];
 

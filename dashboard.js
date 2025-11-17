@@ -1,25 +1,26 @@
-// ===========================
-// Dashboard.js (Test Version)
-// ===========================
+// =====================================
+// Trade Model Dashboard (Test Version)
+// Multi-Exporter + Checkbox Exporter
+// =====================================
 
-// Path to test CSV
-const dataPath = "data.csv";
+// Path to CSV (adjust if needed)
+var dataPath = "data/tariff_data.csv";
 
-let tariffData = [];
+var tariffData = [];
 
-// ===========================
+// =====================================
 // LOAD CSV
-// ===========================
+// =====================================
 async function loadCSV() {
   try {
     console.log("Loading CSV:", dataPath);
 
-    const response = await fetch(dataPath);
+    var response = await fetch(dataPath);
     if (!response.ok) throw new Error("CSV not found");
 
-    const text = await response.text();
+    var text = await response.text();
 
-    const parsed = Papa.parse(text, {
+    var parsed = Papa.parse(text, {
       header: true,
       skipEmptyLines: true
     });
@@ -29,7 +30,7 @@ async function loadCSV() {
         importer: row.importer ? row.importer.trim() : "",
         exporter: row.exporter ? row.exporter.trim() : "",
         product: row.product ? row.product.trim() : "",
-        date_eff: new Date(row.date_eff),
+        date_eff: new Date(row.date_eff), // expects M/D/YYYY
         applied_tariff: parseFloat(row.applied_tariff || 0),
         imports_value_usd: parseFloat(row.imports_value_usd || 0)
       };
@@ -38,7 +39,7 @@ async function loadCSV() {
     console.log("Loaded rows:", tariffData.length);
 
     populateDropdowns();
-    applyFilters(true);
+    applyFilters(true); // initial full view
 
   } catch (err) {
     console.error("Error loading CSV:", err);
@@ -47,17 +48,26 @@ async function loadCSV() {
   }
 }
 
-// ===========================
-// POPULATE DROPDOWNS
-// ===========================
+// =====================================
+// POPULATE CONTROLS
+// =====================================
 function populateDropdowns() {
+  // Importer fixed to United States
   document.getElementById("importerSelect").innerHTML =
-    "<option>United States</option>";
+    "<option value='United States' selected>United States</option>";
 
-  var exporters = Array.from(new Set(tariffData.map(function(d) { return d.exporter; }))).sort();
-  var products = Array.from(new Set(tariffData.map(function(d) { return d.product; }))).sort();
+  // Exporters
+  var exporters = Array.from(new Set(
+    tariffData.map(function(d) { return d.exporter; })
+  )).sort();
 
-  populateSelect("exporterSelect", exporters, "World");
+  populateExporterCheckboxes(exporters);
+
+  // Products
+  var products = Array.from(new Set(
+    tariffData.map(function(d) { return d.product; })
+  )).sort();
+
   populateSelect("productSelect", products, "All");
 }
 
@@ -69,13 +79,75 @@ function populateSelect(id, values, defaultLabel) {
   document.getElementById(id).innerHTML = html;
 }
 
-// ===========================
-// FILTER + PLOT
-// ===========================
-function applyFilters(isInitial) {
-  var exporter = document.getElementById("exporterSelect").value;
-  var product = document.getElementById("productSelect").value;
+// Build checkbox list for exporters
+function populateExporterCheckboxes(exporters) {
+  var box = document.getElementById("exporterBox");
+  box.innerHTML = "";
 
+  // "World" checkbox (Option A behavior)
+  box.innerHTML +=
+    "<label><input type='checkbox' id='exporter_world' checked> World (All exporters)</label>";
+
+  for (var i = 0; i < exporters.length; i++) {
+    var exp = exporters[i];
+    box.innerHTML +=
+      "<label><input type='checkbox' class='expCheck' value='" + exp + "'> " + exp + "</label>";
+  }
+
+  // World ↔ other exporters mutual exclusivity
+  var worldCheck = document.getElementById("exporter_world");
+  worldCheck.addEventListener("change", function() {
+    if (this.checked) {
+      var checks = document.querySelectorAll(".expCheck");
+      for (var j = 0; j < checks.length; j++) {
+        checks[j].checked = false;
+      }
+    }
+  });
+
+  var otherChecks = document.querySelectorAll(".expCheck");
+  for (var k = 0; k < otherChecks.length; k++) {
+    otherChecks[k].addEventListener("change", function() {
+      if (this.checked) {
+        document.getElementById("exporter_world").checked = false;
+      } else {
+        // If nothing else is selected, default back to World
+        var anySelected = document.querySelector(".expCheck:checked");
+        if (!anySelected) {
+          document.getElementById("exporter_world").checked = true;
+        }
+      }
+    });
+  }
+}
+
+// Helper to get selected exporters
+function getSelectedExporters() {
+  var worldChecked = document.getElementById("exporter_world").checked;
+  if (worldChecked) {
+    return ["WORLD"];  // special flag
+  }
+  var checks = document.querySelectorAll(".expCheck:checked");
+  var arr = [];
+  for (var i = 0; i < checks.length; i++) {
+    arr.push(checks[i].value);
+  }
+  if (arr.length === 0) {
+    // Default to WORLD if nothing selected
+    return ["WORLD"];
+  }
+  return arr;
+}
+
+// =====================================
+// APPLY FILTERS
+// =====================================
+function applyFilters(isInitial) {
+  var importer = "United States"; // fixed
+  var exporters = getSelectedExporters();
+  var worldMode = (exporters.length === 1 && exporters[0] === "WORLD");
+
+  var product = document.getElementById("productSelect").value;
   var df = document.getElementById("dateFrom").value;
   var dt = document.getElementById("dateTo").value;
 
@@ -83,95 +155,179 @@ function applyFilters(isInitial) {
   var end = dt ? new Date(dt) : null;
 
   var filtered = tariffData.filter(function(d) {
-    var okExp = !exporter || d.exporter === exporter;
-    var okProd = !product || d.product === product;
+    // importer
+    if (d.importer !== importer) return false;
 
-    var okDate = true;
+    // product
+    if (product && d.product !== product) return false;
 
-    if (!isInitial) {
-      if (start && d.date_eff < start) okDate = false;
-      if (end && d.date_eff > end) okDate = false;
+    // exporter logic
+    if (!worldMode) {
+      if (exporters.indexOf(d.exporter) === -1) return false;
     }
 
-    return okExp && okProd && okDate;
+    // date range
+    if (!isInitial) {
+      if (start && d.date_eff < start) return false;
+      if (end && d.date_eff > end) return false;
+    }
+
+    return true;
   });
 
-  drawChart(filtered);
-  updateSummary(filtered);
+  drawChart(filtered, exporters, worldMode);
+  updateSummary(filtered, exporters, worldMode);
 }
 
-// ===========================
-// TRUE DATE SCALE CHART
-// ===========================
-function drawChart(data) {
-  if (data.length === 0) {
-    Plotly.newPlot("tariffChart", [], { title: "No Data" });
+// =====================================
+// CHART (TRUE DATE SCALING + MULTI EXPORTER)
+// =====================================
+function drawChart(data, exporters, worldMode) {
+  var chartDiv = document.getElementById("tariffChart");
+
+  if (!data || data.length === 0) {
+    Plotly.newPlot(chartDiv, [], { title: "No Data" });
     return;
   }
 
-  // Build a map of date → avg tariff
-  var dailyMap = {};
+  var traces = [];
 
-  data.forEach(function(d) {
-    var key = d.date_eff.toLocaleDateString("en-US");
-    if (!dailyMap[key]) dailyMap[key] = [];
-    dailyMap[key].push(d.applied_tariff);
-  });
+  if (worldMode) {
+    // --- World aggregate line (all exporters) ---
+    var mapWorld = {};
 
-  var dates = [];
-  var values = [];
-
-  Object.keys(dailyMap)
-    .sort(function(a, b) { return new Date(a) - new Date(b); })
-    .forEach(function(key) {
-      dates.push(key);
-      var arr = dailyMap[key];
-      var avg = arr.reduce(function(a, b) { return a + b; }) / arr.length;
-      values.push(avg);
+    data.forEach(function(d) {
+      var key = d.date_eff.toLocaleDateString("en-US");
+      if (!mapWorld[key]) {
+        mapWorld[key] = [];
+      }
+      mapWorld[key].push(d.applied_tariff);
     });
 
-  var trace = {
-    x: dates.map(function(d) { return new Date(d); }),
-    y: values,
-    mode: "lines+markers",
-    line: { width: 3 },
-    marker: { size: 7 }
-  };
+    var dates = [];
+    var values = [];
+
+    Object.keys(mapWorld)
+      .sort(function(a, b) { return new Date(a) - new Date(b); })
+      .forEach(function(key) {
+        dates.push(new Date(key));
+        var arr = mapWorld[key];
+        var avg = arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+        values.push(avg);
+      });
+
+    traces.push({
+      x: dates,
+      y: values,
+      mode: "lines+markers",
+      name: "World",
+      line: { shape: "hv", width: 3 },
+      marker: { size: 7 }
+    });
+
+  } else {
+    // --- Multiple exporters: one line per exporter ---
+    // Collect all unique dates in this subset
+    var dateSet = new Set();
+    data.forEach(function(d) {
+      var key = d.date_eff.toLocaleDateString("en-US");
+      dateSet.add(key);
+    });
+
+    var allDatesSorted = Array.from(dateSet).sort(function(a, b) {
+      return new Date(a) - new Date(b);
+    });
+
+    var allDateObjs = allDatesSorted.map(function(dstr) {
+      return new Date(dstr);
+    });
+
+    // For each exporter, compute avg tariff per date
+    for (var e = 0; e < exporters.length; e++) {
+      var exp = exporters[e];
+      if (exp === "WORLD") continue; // shouldn't happen here
+
+      var expRows = data.filter(function(d) {
+        return d.exporter === exp;
+      });
+
+      var dailyMap = {};
+      expRows.forEach(function(d) {
+        var key = d.date_eff.toLocaleDateString("en-US");
+        if (!dailyMap[key]) dailyMap[key] = [];
+        dailyMap[key].push(d.applied_tariff);
+      });
+
+      var yvals = allDatesSorted.map(function(dkey) {
+        if (!dailyMap[dkey]) return null;
+        var arr = dailyMap[dkey];
+        return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+      });
+
+      traces.push({
+        x: allDateObjs,
+        y: yvals,
+        mode: "lines+markers",
+        name: exp,
+        line: { shape: "hv", width: 3 },
+        marker: { size: 7 }
+      });
+    }
+  }
 
   var layout = {
-    title: "Tariff Trend",
+    title: worldMode ? "Tariff Trend – World" : "Tariff Trends – Selected Exporters",
     xaxis: {
       title: "Date",
       type: "date",
-      tickformat: "%m/%d/%Y"
+      tickformat: "%m/%d/%Y",
+      tickangle: -45
     },
-    yaxis: { title: "Tariff (%)" }
+    yaxis: { title: "Tariff (%)" },
+    font: { family: "Georgia, serif", size: 14 },
+    plot_bgcolor: "#fff",
+    paper_bgcolor: "#fff"
   };
 
-  Plotly.newPlot("tariffChart", [trace], layout);
+  Plotly.newPlot(chartDiv, traces, layout);
 }
 
-// ===========================
+// =====================================
 // SUMMARY TABLE
-// ===========================
-function updateSummary(data) {
+// =====================================
+function updateSummary(data, exporters, worldMode) {
   var tbody = document.querySelector("#summaryTable tbody");
+  var summaryTitle = document.getElementById("summary-title");
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     tbody.innerHTML = "<tr><td colspan='7'>No data</td></tr>";
+    summaryTitle.textContent = "";
     return;
   }
 
-  var html = "";
+  var product = document.getElementById("productSelect").value || "All products";
+
+  var exporterLabel;
+  if (worldMode) {
+    exporterLabel = "World";
+  } else {
+    exporterLabel = exporters.join(", ");
+  }
+
+  summaryTitle.textContent =
+    "United States imports from " + exporterLabel + " — " + product;
+
+  // Group by exporter + date
   var groups = {};
 
   data.forEach(function(d) {
-    var key = d.exporter + "_" + d.date_eff.toLocaleDateString("en-US");
+    var dateStr = d.date_eff.toLocaleDateString("en-US");
+    var key = d.exporter + "_" + dateStr;
 
     if (!groups[key]) {
       groups[key] = {
         exporter: d.exporter,
-        date: d.date_eff.toLocaleDateString("en-US"),
+        date: dateStr,
         tariffs: [],
         weighted: [],
         values: []
@@ -183,10 +339,11 @@ function updateSummary(data) {
     groups[key].values.push(d.imports_value_usd);
   });
 
+  var html = "";
   Object.values(groups).forEach(function(g) {
-    var avg = g.tariffs.reduce(function(a, b) { return a + b; }) / g.tariffs.length;
-    var total = g.values.reduce(function(a, b) { return a + b; });
-    var weighted = g.weighted.reduce(function(a, b) { return a + b; }) / (total || 1);
+    var avg = g.tariffs.reduce(function(a, b) { return a + b; }, 0) / g.tariffs.length;
+    var total = g.values.reduce(function(a, b) { return a + b; }, 0);
+    var weighted = g.weighted.reduce(function(a, b) { return a + b; }, 0) / (total || 1);
 
     html +=
       "<tr>" +
@@ -203,9 +360,11 @@ function updateSummary(data) {
   tbody.innerHTML = html;
 }
 
+// =====================================
+// EVENTS + INIT
+// =====================================
 document.getElementById("applyFilters").addEventListener("click", function() {
   applyFilters(false);
 });
 
-// Start
 loadCSV();

@@ -182,86 +182,15 @@ function applyFilters(isInitial) {
 // =====================================
 // CHART (TRUE DATE SCALING + MULTI EXPORTER)
 // =====================================
-function drawChart(data) {
+function drawChart(data, exporters, worldMode) {
+  var chartDiv = document.getElementById("tariffChart");
+
   if (!data || data.length === 0) {
-    Plotly.newPlot("tariffChart", [], { title: "No data available" });
+    Plotly.newPlot(chartDiv, [], { title: "No Data" });
     return;
   }
 
-  // === STEP 1 — Group data by MM/DD/YYYY ===
-  var dateMap = {};
-
-  for (var i = 0; i < data.length; i++) {
-    var d = data[i];
-    var dateObj = d.date_eff;
-    var dateStr = dateObj.toLocaleDateString("en-US");
-
-    if (!dateMap[dateStr]) {
-      dateMap[dateStr] = { date: dateObj, tariffs: [] };
-    }
-    dateMap[dateStr].tariffs.push(d.applied_tariff);
-  }
-
-  // === STEP 2 — Sort and average ===
-  var allDates = [];
-  var allLabels = [];
-  var allValues = [];
-
-  var keys = Object.keys(dateMap).sort(function (a, b) {
-    return new Date(a) - new Date(b);
-  });
-
-  for (var j = 0; j < keys.length; j++) {
-    var k = keys[j];
-    var obj = dateMap[k];
-
-    var avg =
-      obj.tariffs.reduce(function (a, b) {
-        return a + b;
-      }, 0) / obj.tariffs.length;
-
-    allDates.push(obj.date);
-    allLabels.push(k);
-    allValues.push(avg);
-  }
-
-  // === STEP 3 — Create WTO-style line ===
-  var trace = {
-    x: allDates,
-    y: allValues,
-    mode: "lines+markers",
-    line: { shape: "hv", width: 3, color: "#003366" },
-    marker: { size: 7, color: "#003366" },
-    hovertemplate:
-      "<b>Date:</b> %{text}<br><b>Tariff:</b> %{y:.3f}%<extra></extra>",
-    text: allLabels
-  };
-
-  // === STEP 4 — TRUE TIME SPACING + FORCE ALL LABELS ===
-  var layout = {
-    title: "Tariff Trend",
-    xaxis: {
-      title: "Date",
-      type: "date",
-      tickmode: "array",          // force custom ticks
-      tickvals: allDates,         // real date objects
-      ticktext: allLabels,        // MM/DD/YYYY
-      ticks: "outside",
-      tickson: "boundaries",
-      ticklabelmode: "period",    // <-- forces all labels to show
-      tickangle: -45,
-      showgrid: true
-    },
-    margin: { b: 120 }, // extra room for labels
-    yaxis: { title: "Tariff (%)" },
-    font: { family: "Georgia, serif", size: 14 },
-    plot_bgcolor: "#fff",
-    paper_bgcolor: "#fff",
-    showlegend: false
-  };
-
-  Plotly.newPlot("tariffChart", [trace], layout);
-}
+  var traces = [];
 
   // =========================================
   // WORLD MODE (aggregated)
@@ -355,6 +284,7 @@ function drawChart(data) {
 
   Plotly.newPlot(chartDiv, traces, layout);
 }
+
 // =====================================
 // SUMMARY TABLE
 // =====================================

@@ -35,7 +35,8 @@
       color: #003366;
     }
 
-    select, input[type="date"] {
+    select,
+    input[type="date"] {
       padding: 4px 8px;
       font-family: Georgia, serif;
       border: 1px solid #ccc;
@@ -57,21 +58,23 @@
       color: #003366;
     }
 
-    /* Checkbox panel for exporters */
+    /* Checkbox panel for exporters — FIXED TO SHOW ONLY 1 ROW */
     .checkbox-panel {
       width: 220px;
-      max-height: 160px;
+      max-height: 28px;     /* forces only ONE visible row */
+      overflow-y: auto;     /* scroll when more items */
+      overflow-x: hidden;
       border: 1px solid #ccc;
-      padding: 6px;
-      overflow-y: auto;
+      padding: 4px;
       background: #fff;
       border-radius: 4px;
       font-size: 0.9rem;
+      white-space: nowrap;  /* prevent wrapping */
     }
 
     .checkbox-panel label {
       display: block;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
       cursor: pointer;
       font-weight: normal;
       color: #333;
@@ -87,7 +90,8 @@
       margin-top: 25px;
       font-size: 0.95rem;
     }
-    th, td {
+    th,
+    td {
       border: 1px solid #ccc;
       padding: 6px;
       text-align: center;

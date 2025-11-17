@@ -192,103 +192,126 @@ function drawChart(data, exporters, worldMode) {
 
   var traces = [];
 
-  // =========================================
-  // AGGREGATED WORLD MODE
-  // =========================================
+  // ======================================================
+  // WORLD MODE (Single Aggregated Line)
+  // ======================================================
   if (worldMode) {
     var grouped = {};
 
-    data.forEach(function(d) {
-      var dateKey = d.date_eff.toLocaleDateString("en-US");
-      if (!grouped[dateKey]) grouped[dateKey] = [];
-      grouped[dateKey].push(d.applied_tariff);
+    data.forEach(function (d) {
+      var ds = d.date_eff.toLocaleDateString("en-US");
+      if (!grouped[ds]) grouped[ds] = [];
+      grouped[ds].push(d.applied_tariff);
     });
 
-    var dates = [];
-    var values = [];
+    var allDates = [];
+    var allLabels = [];
+    var allValues = [];
 
     Object.keys(grouped)
-      .sort(function(a, b) { return new Date(a) - new Date(b); })
-      .forEach(function(key) {
-        var dObj = new Date(key);
-        dates.push(dObj);
+      .sort((a, b) => new Date(a) - new Date(b))
+      .forEach(function (key) {
+        allDates.push(new Date(key));      // REAL date object
+        allLabels.push(key);               // MM/DD/YYYY label
 
         var arr = grouped[key];
         var avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-        values.push(avg);
+        allValues.push(avg);
       });
 
     traces.push({
-      x: dates,
-      y: values,
+      x: allDates,
+      y: allValues,
       mode: "lines+markers",
       name: "World",
       line: { shape: "hv", width: 3, color: "#003366" },
       marker: { size: 8, color: "#003366" }
     });
+
+    // === Layout using your Tick Array logic ===
+    var layout = {
+      title: "Tariff Trend",
+      xaxis: {
+        title: "Date",
+        type: "date",
+        tickmode: "array",
+        tickvals: allDates,     // TRUE SPACING
+        ticktext: allLabels,    // EACH DATE SHOWN
+        tickangle: -45
+      },
+      yaxis: { title: "Tariff (%)" },
+      font: { family: "Georgia, serif", size: 14 },
+      plot_bgcolor: "#fff",
+      paper_bgcolor: "#fff",
+      showlegend: false
+    };
+
+    Plotly.newPlot(chartDiv, traces, layout);
+    return;
   }
 
-  // =========================================
-  // MULTI-EXPORTER MODE (SHOW ALL DOTS)
-  // =========================================
-  else {
-    // Group data by exporter → date → tariffs
-    var expMap = {};
+  // ======================================================
+  // MULTI-EXPORTER MODE (Each exporter gets its own line)
+  // ======================================================
 
-    data.forEach(function(d) {
-      if (!expMap[d.exporter]) expMap[d.exporter] = {};
-      var key = d.date_eff.toLocaleDateString("en-US");
-      if (!expMap[d.exporter][key]) expMap[d.exporter][key] = [];
-      expMap[d.exporter][key].push(d.applied_tariff);
+  // 1. Collect all real tariff-change dates across selected exporters
+  var dateSet = new Set();
+  data.forEach(d => dateSet.add(d.date_eff.toLocaleDateString("en-US")));
+
+  var allLabels = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
+  var allDates = allLabels.map(label => new Date(label));
+
+  // 2. Build a trace for each exporter
+  exporters.forEach(function (exp) {
+    var rows = data.filter(d => d.exporter === exp);
+    if (rows.length === 0) return;
+
+    var dailyMap = {};
+    rows.forEach(d => {
+      var ds = d.date_eff.toLocaleDateString("en-US");
+      if (!dailyMap[ds]) dailyMap[ds] = [];
+      dailyMap[ds].push(d.applied_tariff);
     });
 
-    // Build trace per exporter
-    exporters.forEach(function(exp) {
-      var dateKeys = Object.keys(expMap[exp] || {});
-      if (dateKeys.length === 0) return;
+    var x = [];
+    var y = [];
 
-      // Sort dates
-      dateKeys.sort(function(a, b) { return new Date(a) - new Date(b); });
-
-      var x = [];
-      var y = [];
-
-      dateKeys.forEach(function(dk) {
-        x.push(new Date(dk));   // REAL DATE
-        var arr = expMap[exp][dk];
+    allLabels.forEach(function (label) {
+      if (dailyMap[label]) {
+        var arr = dailyMap[label];
         var avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-        y.push(avg);            // NO null → Plotly shows a dot
-      });
 
-      traces.push({
-        x: x,
-        y: y,
-        mode: "lines+markers",
-        name: exp,
-        line: { shape: "hv", width: 3 },
-        marker: { size: 8 }
-      });
+        x.push(new Date(label));   // REAL spaced date
+        y.push(avg);               // VALUE exists → dot is shown
+      }
     });
-  }
 
-  // =========================================
-  // TRUE DATE SCALING
-  // =========================================
+    traces.push({
+      x: x,
+      y: y,
+      mode: "lines+markers",
+      name: exp,
+      line: { shape: "hv", width: 3 },
+      marker: { size: 8 }
+    });
+  });
+
+  // === Layout using your Tick Array logic ===
   var layout = {
-    title: "Tariff Trend",
+    title: "Exporter Comparison",
     xaxis: {
       title: "Date",
       type: "date",
-      tickmode: "array",     // force custom ticks
-      tickvals: allDates,    // REAL dates for correct spacing
-      ticktext: allLabels,   // MM/DD/YYYY for each dot
+      tickmode: "array",
+      tickvals: allDates,    // TRUE spacing across chart
+      ticktext: allLabels,   // EXACT MM/DD/YYYY text
       tickangle: -45
     },
     yaxis: { title: "Tariff (%)" },
     font: { family: "Georgia, serif", size: 14 },
     plot_bgcolor: "#fff",
     paper_bgcolor: "#fff",
-    showlegend: false
+    showlegend: true
   };
 
   Plotly.newPlot(chartDiv, traces, layout);

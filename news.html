@@ -1,68 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Dashboard Test | SMU CRIT</title>
+  <meta charset="UTF-8" />
+  <title>Dashboard Test | SMU CRIT</title>
 
-<style>
-  body {
-    font-family: Georgia, serif;
-    background: #f8f9fa;
-    padding: 20px;
-  }
-  h1 { color: #003366; }
+  <style>
+    body {
+      font-family: Georgia, serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #003366;
+      margin-top: 0;
+    }
 
-  #controls { margin-bottom: 20px; }
+    #controls {
+      margin-bottom: 20px;
+    }
 
-  .control-row, .date-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 12px;
-  }
+    .control-row,
+    .date-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
 
-  select, input[type="date"] {
-    padding: 4px 8px;
-    font-family: Georgia;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
+    label {
+      font-weight: bold;
+      color: #003366;
+    }
 
-  button {
-    padding: 6px 14px;
-    background: #003366;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #ffcc00;
-    color: #003366;
-  }
+    select, input[type="date"] {
+      padding: 4px 8px;
+      font-family: Georgia, serif;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
 
-  #tariffChart { margin-top: 40px; }
+    button {
+      padding: 6px 14px;
+      background-color: #003366;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ffcc00;
+      color: #003366;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
-    text-align: center;
-  }
-  th {
-    background: #003366;
-    color: white;
-  }
-</style>
+    /* Checkbox panel for exporters */
+    .checkbox-panel {
+      width: 220px;
+      max-height: 160px;
+      border: 1px solid #ccc;
+      padding: 6px;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
 
-<!-- External libs -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    .checkbox-panel label {
+      display: block;
+      margin-bottom: 3px;
+      cursor: pointer;
+      font-weight: normal;
+      color: #333;
+    }
 
+    #tariffChart {
+      margin-top: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background: #003366;
+      color: white;
+    }
+
+    #summary-title {
+      font-style: italic;
+      margin-top: 10px;
+    }
+  </style>
+
+  <!-- External libraries -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 
 <body>
@@ -71,23 +114,28 @@
 
 <div id="controls">
 
+  <!-- FIRST ROW -->
   <div class="control-row">
     <label>Importer:</label>
     <select id="importerSelect"></select>
 
     <label>Exporter:</label>
-    <select id="exporterSelect"></select>
+    <!-- Checkbox panel for multi-exporter selection -->
+    <div id="exporterBox" class="checkbox-panel">
+      <!-- Filled dynamically by dashboard.js -->
+    </div>
 
     <label>Product:</label>
     <select id="productSelect"></select>
   </div>
 
+  <!-- SECOND ROW -->
   <div class="date-row">
     <label>From:</label>
-    <input type="date" id="dateFrom">
+    <input type="date" id="dateFrom" />
 
     <label>To:</label>
-    <input type="date" id="dateTo">
+    <input type="date" id="dateTo" />
 
     <button id="applyFilters">Apply Filters</button>
   </div>
@@ -105,12 +153,12 @@
   <thead>
     <tr>
       <th>Partner</th>
-      <th>Date</th>
+      <th>Date (MM/DD/YYYY)</th>
       <th>Simple Avg Tariff</th>
       <th>Weighted Avg Tariff</th>
       <th>Affected Trade (USD)</th>
-      <th>Trade Share</th>
-      <th>Tariff Line Share</th>
+      <th>Affected Trade Share</th>
+      <th>Affected Tariff Line Share</th>
     </tr>
   </thead>
   <tbody></tbody>

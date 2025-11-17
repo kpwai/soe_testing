@@ -275,22 +275,24 @@ function drawChart(data, exporters, worldMode) {
   // TRUE DATE SCALING
   // =========================================
   var layout = {
-    title: worldMode ? "World Tariff Trend" : "Exporter Comparison",
+    title: "Tariff Trend",
     xaxis: {
       title: "Date",
-      type: "date",           // ⭐ TRUE REAL DATE SPACING
-      tickformat: "%m/%d/%Y",
+      type: "date",
+      tickmode: "array",     // force custom ticks
+      tickvals: allDates,    // REAL dates for correct spacing
+      ticktext: allLabels,   // MM/DD/YYYY for each dot
       tickangle: -45
     },
     yaxis: { title: "Tariff (%)" },
     font: { family: "Georgia, serif", size: 14 },
     plot_bgcolor: "#fff",
-    paper_bgcolor: "#fff"
+    paper_bgcolor: "#fff",
+    showlegend: false
   };
 
   Plotly.newPlot(chartDiv, traces, layout);
 }
-
 // =====================================
 // SUMMARY TABLE
 // =====================================

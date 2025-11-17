@@ -192,27 +192,27 @@ function drawChart(data, exporters, worldMode) {
 
   var traces = [];
 
+  // =========================================
+  // WORLD MODE (aggregated)
+  // =========================================
   if (worldMode) {
-    // --- World aggregate line (all exporters) ---
-    var mapWorld = {};
+    var grouped = {};
 
     data.forEach(function(d) {
-      var key = d.date_eff.toLocaleDateString("en-US");
-      if (!mapWorld[key]) {
-        mapWorld[key] = [];
-      }
-      mapWorld[key].push(d.applied_tariff);
+      var dateKey = d.date_eff.toLocaleDateString("en-US");
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(d.applied_tariff);
     });
 
     var dates = [];
     var values = [];
 
-    Object.keys(mapWorld)
+    Object.keys(grouped)
       .sort(function(a, b) { return new Date(a) - new Date(b); })
       .forEach(function(key) {
-        dates.push(new Date(key));
-        var arr = mapWorld[key];
-        var avg = arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+        dates.push(new Date(key));  // TRUE DATE OBJECT
+        var arr = grouped[key];
+        var avg = arr.reduce((a, b) => a + b, 0) / arr.length;
         values.push(avg);
       });
 
@@ -221,65 +221,58 @@ function drawChart(data, exporters, worldMode) {
       y: values,
       mode: "lines+markers",
       name: "World",
-      line: { shape: "hv", width: 3 },
-      marker: { size: 7 }
+      line: { shape: "hv", width: 3, color: "#003366" },
+      marker: { size: 8, color: "#003366" }
     });
 
-  } else {
-    // --- Multiple exporters: one line per exporter ---
-    // Collect all unique dates in this subset
+  }
+
+  // =========================================
+  // MULTI-EXPORTER MODE
+  // =========================================
+  else {
     var dateSet = new Set();
-    data.forEach(function(d) {
-      var key = d.date_eff.toLocaleDateString("en-US");
-      dateSet.add(key);
-    });
+    data.forEach(d => dateSet.add(d.date_eff.toLocaleDateString("en-US")));
 
-    var allDatesSorted = Array.from(dateSet).sort(function(a, b) {
-      return new Date(a) - new Date(b);
-    });
+    var sortedKeys = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
+    var sortedDates = sortedKeys.map(k => new Date(k));
 
-    var allDateObjs = allDatesSorted.map(function(dstr) {
-      return new Date(dstr);
-    });
+    exporters.forEach(function(exp) {
+      var rows = data.filter(d => d.exporter === exp);
 
-    // For each exporter, compute avg tariff per date
-    for (var e = 0; e < exporters.length; e++) {
-      var exp = exporters[e];
-      if (exp === "WORLD") continue; // shouldn't happen here
+      var daily = {};
 
-      var expRows = data.filter(function(d) {
-        return d.exporter === exp;
+      rows.forEach(d => {
+        var k = d.date_eff.toLocaleDateString("en-US");
+        if (!daily[k]) daily[k] = [];
+        daily[k].push(d.applied_tariff);
       });
 
-      var dailyMap = {};
-      expRows.forEach(function(d) {
-        var key = d.date_eff.toLocaleDateString("en-US");
-        if (!dailyMap[key]) dailyMap[key] = [];
-        dailyMap[key].push(d.applied_tariff);
-      });
-
-      var yvals = allDatesSorted.map(function(dkey) {
-        if (!dailyMap[dkey]) return null;
-        var arr = dailyMap[dkey];
-        return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+      var yvals = sortedKeys.map(function(dk) {
+        if (!daily[dk]) return null;
+        var arr = daily[dk];
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
       });
 
       traces.push({
-        x: allDateObjs,
+        x: sortedDates,
         y: yvals,
         mode: "lines+markers",
         name: exp,
         line: { shape: "hv", width: 3 },
-        marker: { size: 7 }
+        marker: { size: 8 }
       });
-    }
+    });
   }
 
+  // =========================================
+  // TRUE DATE SCALING FIX
+  // =========================================
   var layout = {
-    title: worldMode ? "Tariff Trend – World" : "Tariff Trends – Selected Exporters",
+    title: worldMode ? "World Tariff Trend" : "Exporter Comparison",
     xaxis: {
       title: "Date",
-      type: "date",
+      type: "date",              // ⭐ TRUE DATE SCALE
       tickformat: "%m/%d/%Y",
       tickangle: -45
     },
@@ -291,7 +284,6 @@ function drawChart(data, exporters, worldMode) {
 
   Plotly.newPlot(chartDiv, traces, layout);
 }
-
 // =====================================
 // SUMMARY TABLE
 // =====================================

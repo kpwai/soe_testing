@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta viewport="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trade Model (CP) Equilibrium Dashboard | SMU CRIT</title>
 
   <!-- === Global Page Styles === -->
@@ -35,24 +35,18 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    nav a:hover {
+    nav a.active, nav a:hover {
       background-color: #ffcc00;
       color: #003366;
     }
 
-    nav a.active {
-      background-color: #ffcc00;
-      color: #003366;
-    }
-
-    /* Main container */
+    /* Container */
     .container {
       max-width: 1100px;
       margin: 2rem auto;
       padding: 2rem;
       background: #fff;
       border-radius: 8px;
-      font-family: Georgia, serif;
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
 
@@ -60,37 +54,39 @@
       color: #003366;
     }
 
-    /* ==== TAB SYSTEM ==== */
-    .tab-container {
-      margin-top: 15px;
-      border-bottom: 2px solid #003366;
+    /* === TAB SYSTEM === */
+    .tab-buttons {
       display: flex;
-      gap: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #003366;
     }
 
-    .tab {
+    .tab-button {
       padding: 10px 18px;
       cursor: pointer;
-      background: #e6e6e6;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-bottom: none;
       border-radius: 6px 6px 0 0;
+      margin-right: 5px;
       font-weight: bold;
+      color: #003366;
     }
 
-    .tab.active {
+    .tab-button.active {
       background: #003366;
       color: white;
     }
 
     .tab-content {
       display: none;
-      margin-top: 1.5rem;
     }
 
     .tab-content.active {
       display: block;
     }
 
-    /* === FILTER AREA === */
+    /* === FILTER CONTROLS === */
     #controls {
       width: 100%;
       margin-bottom: 1.8rem;
@@ -113,6 +109,11 @@
       align-items: flex-start;
     }
 
+    .control-block label {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
     .control-block select,
     .control-block input[type="date"],
     .control-block button {
@@ -120,52 +121,73 @@
       padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-family: Georgia, serif;
+      font-size: 0.95rem;
     }
 
-    #applyFilters {
-      border: none;
-      background: #003366;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+    /* Exporter checkbox dropdown */
+    .dropdown-container {
+      width: 200px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    #applyFilters:hover {
-      background-color: #ffcc00;
-      color: #003366;
-    }
-
-    /* Checkbox dropdown for exporters */
-    .dropdown-container { position: relative; width: 200px; }
     .dropdown-display {
       width: 100%;
       height: 34px;
       padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      background: white;
+      background: #fff;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .checkbox-panel {
-      position: absolute;
-      width: 100%;
-      max-height: 180px;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      top: 36px;
-      left: 0;
-      display: none;
-      z-index: 10;
-      overflow-y: auto;
-      padding: 6px;
+      box-sizing: border-box;
     }
 
-    /* Summary table */
+    .checkbox-panel {
+      position: absolute;
+      top: 36px;
+      left: 0;
+      width: 100%;
+      max-height: 180px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow-y: auto;
+      padding: 6px;
+      display: none;
+      z-index: 10;
+    }
+
+    .checkbox-panel label {
+      display: block;
+      margin-bottom: 4px;
+      cursor: pointer;
+      font-weight: normal;
+      color: #333;
+    }
+
+    /* Tables */
+    table.dataTable {
+      width: 100%;
+      background: #fff;
+      border-collapse: collapse;
+    }
+
+    table.dataTable thead {
+      background-color: #003366;
+      color: white;
+    }
+
+    table.dataTable th,
+    table.dataTable td {
+      padding: 0.6rem;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
     #summary {
       background: #f8f9fa;
       padding: 1rem;
@@ -174,40 +196,27 @@
       margin-top: 2rem;
     }
 
-    table.dataTable {
-      width: 100%;
-      background: white;
-      border-collapse: collapse;
-    }
-
-    table.dataTable thead {
-      background: #003366;
-      color: white;
-    }
-
-    table.dataTable th, table.dataTable td {
-      border: 1px solid #ddd;
-      padding: 6px;
-      text-align: center;
+    #summary-title {
+      font-style: italic;
+      color: #444;
     }
 
     footer {
+      text-align: center;
       margin-top: 3rem;
       padding: 1rem;
-      background: #003366;
+      background-color: #003366;
       color: white;
-      text-align: center;
     }
-
   </style>
 
-  <!-- CDN libraries -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 </head>
 
 <body>
 
-<!-- NAVIGATION -->
 <nav>
   <a href="index.html">Home</a>
   <a href="about.html">About</a>
@@ -221,68 +230,20 @@
 
 <div class="container">
   <h1>Trade Model (CP) Equilibrium Dashboard</h1>
-  <h2>Tariff Actions</h2>
 
-  <!-- ================================
-       TAB BUTTONS (HS6 / HS8)
-       ================================ -->
-  <div class="tab-container">
-    <div class="tab active" data-tab="hs6">HS6 Trend</div>
-    <div class="tab" data-tab="hs8">HS8 Trend</div>
+  <!-- === TAB BUTTONS === -->
+  <div class="tab-buttons">
+    <div class="tab-button active" data-tab="hs6">HS6</div>
+    <div class="tab-button" data-tab="hs8">HS8</div>
   </div>
 
-  <!-- ================================
-       TAB CONTENT: HS6
-       ================================ -->
+  <!-- =============== TAB CONTENT WRAPPERS =============== -->
+
+  <!-- HS6 TAB -->
   <div id="hs6" class="tab-content active">
-
-    <!-- FILTER AREA (SAME FOR BOTH TABS NOW) -->
-    <div id="controls">
-
-      <div class="control-row">
-        <div class="control-block">
-          <label>Importer:</label>
-          <select id="importerSelect"></select>
-        </div>
-
-        <div class="control-block">
-          <label>Exporter:</label>
-          <div class="dropdown-container">
-            <div class="dropdown-display" id="exporterDisplay">
-              <span>Select exporters…</span>
-              <span>▼</span>
-            </div>
-            <div id="exporterBox" class="checkbox-panel"></div>
-          </div>
-        </div>
-
-        <div class="control-block">
-          <label>Product Code:</label>
-          <select id="productSelect"></select>
-        </div>
-      </div>
-
-      <div class="date-row">
-        <div class="control-block">
-          <label>From:</label>
-          <input type="date" id="dateFrom">
-        </div>
-
-        <div class="control-block">
-          <label>To:</label>
-          <input type="date" id="dateTo">
-        </div>
-
-        <div class="control-block">
-          <label>&nbsp;</label>
-          <button id="applyFilters">Apply Filters</button>
-        </div>
-      </div>
-
-    </div>
-
+    <h2>Tariff Actions – HS6 Level</h2>
+    <div id="controls"></div>
     <div id="tariffChart"></div>
-
     <section id="summary">
       <h3>Details</h3>
       <p id="summary-title"></p>
@@ -290,58 +251,57 @@
         <thead>
           <tr>
             <th>Partner</th>
-            <th>Date</th>
+            <th>Date (MM/DD/YYYY)</th>
             <th>Simple Avg Tariff</th>
             <th>Weighted Avg Tariff</th>
-            <th>Affected Trade</th>
-            <th>Trade Share</th>
-            <th>Tariff Line Share</th>
+            <th>Affected Trade (USD)</th>
+            <th>Affected Trade Share</th>
+            <th>Affected Tariff Line Share</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </section>
-
   </div>
 
-
-  <!-- ================================
-       TAB CONTENT: HS8 (EMPTY FOR NOW)
-       ================================ -->
+  <!-- HS8 TAB -->
   <div id="hs8" class="tab-content">
-    <h2>HS8 Level Trend (Coming Soon)</h2>
-    <p>This section will load HS8 data using a separate CSV file.</p>
+    <h2>Tariff Actions – HS8 Level</h2>
+    <div id="controls_hs8"></div>
+    <div id="tariffChart_hs8"></div>
+    <section id="summary_hs8">
+      <h3>Details</h3>
+      <p id="summary-title_hs8"></p>
+      <table id="summaryTable_hs8" class="display">
+        <thead>
+          <tr>
+            <th>Partner</th>
+            <th>Date (MM/DD/YYYY)</th>
+            <th>Simple Avg Tariff</th>
+            <th>Weighted Avg Tariff</th>
+            <th>Affected Trade (USD)</th>
+            <th>Affected Trade Share</th>
+            <th>Affected Tariff Line Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
   </div>
 
 </div>
 
-<footer>© 2026 SMU Centre for Research on International Trade</footer>
+<footer>
+  © 2026 SMU Centre for Research on International Trade
+</footer>
 
-<!-- JS libraries -->
+<!-- Scripts -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-<!-- Dashboard Logic -->
 <script src="dashboard.js"></script>
-
-<!-- SIMPLE TAB SWITCH SCRIPT -->
-<script>
-  const tabs = document.querySelectorAll(".tab");
-  const contents = document.querySelectorAll(".tab-content");
-
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      contents.forEach(c => c.classList.remove("active"));
-      document.getElementById(tab.dataset.tab).classList.add("active");
-    });
-  });
-</script>
 
 </body>
 </html>

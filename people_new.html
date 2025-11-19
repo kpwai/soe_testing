@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>People | School of Economics Trade Centre</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f4f4;
+    }
+    p {
+      font-family: Georgia, serif;
+      font-size: 18px;
+      line-height: 1.6;
+      /*max-width: 700px;*/
+      margin: 1.5rem auto;
+      color: #333333;
+    }
+    p a {
+      color: #003366;
+      text-decoration: underline;
+    }
+    p a:hover,
+    p a:focus {
+      color: #ffcc00;
+      text-decoration: none;
+      outline: none;
+    } 
+    nav {
+      background-color: #003366;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 1rem 0;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      margin: 0 0.2rem;
+      font-weight: bold;
+      border-radius: 4px 4px 0 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    nav a:hover,
+    nav a.active {
+      background-color: #ffcc00;
+      color: #003366;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #ffffff;
+      border-radius: 8px;
+    }
+
+    h1, h2 {
+      color: #003366;
+    }
+
+    .section-title {
+      border-bottom: 2px solid #ffcc00;
+      padding-bottom: 5px;
+      margin-top: 2rem;
+    }
+
+    .person-row {
+      display: flex;
+      align-items: center;
+      background: #f9f9f9;
+      border-radius: 10px;
+      margin: 1rem 0;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .person-row img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 1.5rem;
+    }
+
+    .person-info {
+      flex: 1;
+    }
+
+    .person-info h3 {
+      margin: 0 0 0.5rem;
+      color: #003366;
+    }
+
+    .person-info p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    /* Org chart styles */
+.org-chart ul {
+  padding-top: 20px;
+  position: relative;
+  padding-left: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.org-chart ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 2px solid #ccc;
+  height: 20px;
+}
+
+.org-chart li {
+  display: inline-block;
+  margin: 0 20px;
+  position: relative;
+  padding: 20px 5px 0 5px;
+}
+
+.org-chart li::before,
+.org-chart li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  border-top: 2px solid #ccc;
+  width: 50%;
+  height: 20px;
+}
+
+.org-chart li::before {
+  left: -50%;
+  border-right: 2px solid #ccc;
+}
+
+.org-chart li::after {
+  right: -50%;
+  border-left: 2px solid #ccc;
+}
+
+.org-chart li:only-child::before,
+.org-chart li:only-child::after {
+  display: none;
+}
+
+.org-chart li:only-child {
+  padding-top: 0;
+}
+
+.org-box {
+  padding: 10px 20px;
+  border: 2px solid #003366;
+  display: inline-block;
+  background-color: #fdfdfd;
+  color: #003366;
+  font-weight: bold;
+  border-radius: 5px;
+  min-width: 180px;
+}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="people.html" class="active">People</a>
+  <a href="research.html">Research</a>
+  <a href="researchdata.html">Research Data</a>
+  <a href="news.html">News</a>
+  <a href="events.html">Events</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<div class="container">
+  <h1>Our People</h1>
+  <p>The research team will comprise local faculty members from SMU’s School of Economics with expertise in related fields, working alongside a panel of international experts who bring established research credentials in production networks and global value chains (GVC).</p>
+
+  <h2 class="section-title">Faculty Members from SMU</h2>
+  <div class="person-row">
+    <img src="images/plchang.jpg" alt="Prof. Pao-Li CHANG">
+    <div class="person-info">
+      <h3>Lead PI: <a href="https://faculty.smu.edu.sg/profile/chang-pao-li-1201" target="_blank" rel="noopener noreferrer">CHANG Pao Li</a></h3>
+      <!--<p>Dean, School of Economics</p>-->
+      <p><em>CHANG Pao Li is Associate Professor of Economics and Associate Dean (Research) at SMU. Her areas of research expertise include empirical and quantitative analyses of trade flows and labor market response, empirical analyses of global value chain, and analyses of firm-level micro performances. She will take charge of the data acquisition process and the communication with public/private sources for obtaining the data. She will spearhead research projects under the research themes of productivity estimation, GVC, trade/labor, and semiconductor industry. She has been PI for several research grants, including an MOE Tier 2 grant. She is full-time at SMU and will devote 35% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/linma.jpg" alt="Prof.MA Lin">
+    <div class="person-info">
+      <h3>Co-PI: <a href="https://faculty.smu.edu.sg/profile/ma-lin-5836" target="_blank" rel="noopener noreferrer">MA Lin</a></h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>MA Lin is Assistant Professor of Economics at SMU. His main research areas include trade and economic geography. Lin is very experienced in quantitative analyses of large-scale spatial models and global sourcing. He will supervise the data compilation / maintenance activities, oversee the projects under the research themes of innovation, and lead the project related to transportation infrastructure. He is full-time at SMU and will devote 25% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/lijing.jpg" alt="Prof.Jing LI">
+    <div class="person-info">
+      <h3>Co-PI: <a href="https://economics.smu.edu.sg/faculty/profile/1906/li-jing">Jing LI</a></h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>Jing LI is Associate Professor of Economics at SMU. She specializes in urban economics and has conducted extensive research on the spatial economics of innovation activities. She will lead the projects related to remote working, and contribute to projects under the research theme of innovation. She is full-time at SMU and will devote 15% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/zlyang.jpg" alt="Prof. Zhenlin YANG">
+    <div class="person-info">
+      <h3>Collaborator: <a href="https://faculty.smu.edu.sg/profile/yang-zhenlin-1551">Zhenlin YANG</a></h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>Zhenlin YANG is Professor of Economics and Statistics at SMU, with strong expertise in Spatial Econometrics. Zhenlin will contribute to the research activities in developing productivity estimation methodologies, given firm-to-firm linkages. The lead PI has an on-going project with Zhenlin in this regard. He is full-time at SMU and will devote 10% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/yuanmei.jpg" alt="Prof. Yuan MEI">
+    <div class="person-info">
+      <h3>Collaborator: <a href="https://faculty.smu.edu.sg/profile/mei-yuan-1366">Yuan MEI</a></h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>Yuan MEI is Assistant Professor of Economics at SMU. His areas of research expertise include trade policy, spatial economics, and development economics. He will contribute to the empirical and quantitative analyses of firm-level responses to trade policy shocks. He is full-time at SMU and will devote 10% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/cyyang.jpg" alt="Prof. Chenying YANG">
+    <div class="person-info">
+      <h3>Collaborator: <a href="https://economics.smu.edu.sg/faculty/profile/5991/yang-chenying">Chenying YANG</a></h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>Chenying YANG is Assistant Professor of Economics at SMU. Her research specializes in international trade, industrial organization, and spatial economics. She will complement the team with her expertise in empirical identification of high-dimensional interactions among plants/firms, and in industrial policies for global value chains. She is full-time at SMU and will devote 10% effort to the project.</em></p>
+    </div>
+  </div>
+
+  <h2 class="section-title">External Collaborators</h2>
+  <div class="person-row">
+    <img src="images/1.jpg" alt="Prof.">
+    <div class="person-info">
+      <h3>Daniel XU</h3>
+      <!--<p>Dean, School of Economics</p>-->
+      <p><em></em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/2.jpg" alt="Prof.">
+    <div class="person-info">
+      <h3>Ayumu Ken KIKKAWA</h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>...........</em></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/2.jpg" alt="Prof.">
+    <div class="person-info">
+      <h3>Yuhei MIYAUCHI</h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>...........</em></p>
+    </div>
+  </div>
+    
+  <div class="person-row">
+    <img src="images/2.jpg" alt="Prof.">
+    <div class="person-info">
+      <h3>Davin CHOR</h3>
+      <!--<p>Associate Professor</p>-->
+      <p><em>...........</em></p>
+    </div>
+  </div>
+
+  <h2 class="section-title">Research Staff</h2>
+  <div class="person-row">
+    <img src="images/kpw2.jpg" alt="Ms. Khaing Phyo Wai">
+    <div class="person-info">
+      <h3>Khaing Phyo Wai</h3>
+      <p>Data Scientist</p>
+      <p><a href="https://scholar.google.com/citations?user=K4QXtd8AAAAJ&hl=en&authuser=5">My Scholar Page</a></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/daniel-wong.jpg" alt="Mr.HO, Ngai-Lam">
+    <div class="person-info">
+      <h3>HO, Ngai-Lam</h3>
+      <p>Data Scientist</p>
+      <p></p>
+    </div>
+  </div>
+  
+  <div class="person-row">
+    <img src="images/BUChunya.jpg" alt="BU Chunya">
+    <div class="person-info">
+      <h3>BU Chunya</h3>
+      <p>Research Fellow</p>
+      <p></p>
+    </div>
+  </div>
+
+   <div class="person-row">
+    <img src="images/LIWenze.jpg" alt="LI Wenze">
+    <div class="person-info">
+      <h3>LI Wenze</h3>
+      <p>Research Fellow</p>
+      <p></p>
+    </div>
+  </div>
+  
+  <div class="person-row">
+    <img src="images/YosukeHigashiyama.jpg" alt="Yosuke Higashiyama">
+    <div class="person-info">
+      <h3>Yosuke Higashiyama</h3>
+      <p>Research Fellow</p>
+      <p></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/QiuguHE.jpg" alt="Qiugu HE">
+    <div class="person-info">
+      <h3>Qiugu HE</h3>
+      <p>Research Fellow</p>
+      <p></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/NITong.jpg" alt="NI Tong">
+    <div class="person-info">
+      <h3>NI Tong</h3>
+      <p>Research Assistant</p>
+      <p></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/CHENRuoqing.jpg" alt="CHEN Ruoqing">
+    <div class="person-info">
+      <h3>CHEN Ruoqing</h3>
+      <p>Research Assistant</p>
+      <p></p>
+    </div>
+  </div>
+
+  <div class="person-row">
+    <img src="images/GregoryGWEEYongLoong.jpg" alt="Gregory GWEE Yong Loong">
+    <div class="person-info">
+      <h3>Gregory GWEE Yong Loong</h3>
+      <p>Research Assistant</p>
+      <p></p>
+    </div>
+  </div>
+</div>
+<!--<h2 class="section-title">Organization Structure</h2>
+
+<div class="org-chart">
+  <ul>
+    <li>
+      <div class="org-box">Prof</div>
+      <ul>
+        <li>
+          <div class="org-box">Prof</div>
+          <ul>
+            <li><div class="org-box">Prof</div></li>
+            <li><div class="org-box">Prof</div></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>-->
+
+</body>
+</html>

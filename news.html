@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trade Model (CP) Equilibrium Dashboard | SMU CRIT</title>
+
+  <!-- === Global Page Styles === -->
+  <style>
+    html, body {
+      font-family: Georgia, serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    /* Navbar */
+    nav {
+      background-color: #003366;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 1rem 0;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      margin: 0 0.3rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-radius: 4px 4px 0 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    nav a:hover {
+      background-color: #ffcc00;
+      color: #003366;
+    }
+
+    nav a.active {
+      background-color: #ffcc00;
+      color: #003366;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      font-family: Georgia, serif;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    h1, h2, h3 {
+      color: #003366;
+    }
+
+    /* === FILTER CONTROLS === */
+    #controls {
+      width: 100%;
+      margin-bottom: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-family: Georgia, serif;
+    }
+
+    .control-row,
+    .date-row {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      column-gap: 2rem;
+      align-items: flex-start;
+    }
+
+    .control-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .control-block label {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .control-block select,
+    .control-block input[type="date"],
+    .control-block button {
+      width: 200px;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: Georgia, serif;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+
+    /* Button specific styling */
+    #applyFilters {
+      border: none;
+      background-color: #003366;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0.45rem 0.6rem;
+    }
+
+    #applyFilters:hover {
+      background-color: #ffcc00;
+      color: #003366;
+    }
+
+    /* ================================
+       EXPORTER DROPDOWN ALIGNMENT FIX
+       ================================ */
+
+    .dropdown-container {
+      width: 200px; /* match select width */
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dropdown-display {
+      width: 100%;
+      height: 34px;              /* match <select> height */
+      padding: 0.4rem 0.6rem;    /* match input padding */
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    .dropdown-display span {
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .checkbox-panel {
+      position: absolute;
+      top: 36px;   /* align right below the box */
+      left: 0;
+      width: 100%;
+      max-height: 180px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow-y: auto;
+      padding: 6px;
+      display: none;
+      z-index: 10;
+      box-sizing: border-box;
+    }
+
+    .checkbox-panel label {
+      display: block;
+      margin-bottom: 4px;
+      cursor: pointer;
+      font-weight: normal;
+      color: #333;
+    }
+
+    /* ===== TABLE STYLING ===== */
+    table.dataTable {
+      width: 100%;
+      background: #fff;
+      border-collapse: collapse;
+    }
+
+    table.dataTable thead {
+      background-color: #003366;
+      color: white;
+    }
+
+    table.dataTable th,
+    table.dataTable td {
+      padding: 0.6rem;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    #summary {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-top: 2rem;
+    }
+
+    #summary-title {
+      font-style: italic;
+      color: #444;
+      margin-bottom: 0.6rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding: 1rem;
+      background-color: #003366;
+      color: white;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .control-row,
+      .date-row {
+        grid-template-columns: 1fr;
+        row-gap: 0.75rem;
+      }
+    }
+  </style>
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+</head>
+
+<body>
+
+<!-- === NAVIGATION === -->
+<nav>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="people.html">People</a>
+  <a href="research.html">Research</a>
+  <a href="researchdata.html">Research Data</a>
+  <a href="news.html" class="active">News</a>
+  <a href="events.html">Events</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<div class="container">
+  <h1>Trade Model (CP) Equilibrium Dashboard</h1>
+  <h2>Tariff Actions</h2>
+
+  <!-- === FILTER CONTROL AREA === -->
+  <div id="controls">
+
+    <!-- ROW 1: Importer / Exporter / Product -->
+    <div class="control-row">
+      
+      <div class="control-block">
+        <label>Importer:</label>
+        <select id="importerSelect"></select>
+      </div>
+
+      <!-- EXPORTER CHECKBOX DROPDOWN -->
+      <div class="control-block">
+        <label>Exporter:</label>
+        <div class="dropdown-container">
+          <div class="dropdown-display" id="exporterDisplay">
+            <span>Select exporters…</span>
+            <span class="dropdown-arrow">▼</span>
+          </div>
+          <div id="exporterBox" class="checkbox-panel"></div>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <label>Product Code:</label>
+        <select id="productSelect"></select>
+      </div>
+
+    </div>
+
+    <!-- ROW 2: From / To / Apply Filters -->
+    <div class="date-row">
+      <div class="control-block">
+        <label>From:</label>
+        <input type="date" id="dateFrom">
+      </div>
+
+      <div class="control-block">
+        <label>To:</label>
+        <input type="date" id="dateTo">
+      </div>
+
+      <div class="control-block">
+        <label>&nbsp;</label>
+        <button id="applyFilters">Apply Filters</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- === CHART === -->
+  <div id="tariffChart" style="margin-top:2rem;"></div>
+
+  <!-- === SUMMARY TABLE === -->
+  <section id="summary">
+    <h3>Details</h3>
+    <p id="summary-title"></p>
+
+    <table id="summaryTable" class="display">
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th>Date (MM/DD/YYYY)</th>
+          <th>Simple Avg Tariff</th>
+          <th>Weighted Avg Tariff</th>
+          <th>Affected Trade (USD)</th>
+          <th>Affected Trade Share</th>
+          <th>Affected Tariff Line Share</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+</div>
+
+<footer>
+  © 2026 SMU Centre for Research on International Trade
+</footer>
+
+<!-- Dependencies -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- Dashboard Script -->
+<script src="dashboard.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>People | SMU Centre for Research on International Trade</title>
+  <style>
+    body {
+      font-family:  Georgia, serif;
+      margin: 0;
+      background: #f4f4f4;
+    }
+
+     nav {
+      background-color: #003366;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 1rem 0;
+      font-family: Georgia, serif;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      margin: 0 0.3rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-radius: 4px 4px 0 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    nav a:hover,
+    nav a.active {
+      background-color: #ffcc00;
+      color: #003366;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #ffffff;
+      border-radius: 8px;
+    }
+
+    h1, h2 {
+      color: #003366;
+    }
+    p {
+      font-family: Georgia, serif;
+      font-size: 18px;
+      line-height: 1.6;
+      margin: 1.5rem auto;
+      color: #333333;
+      text-align: justify;
+    }
+    .section-title {
+      border-bottom: 2px solid #ffcc00;
+      padding-bottom: 5px;
+      margin-top: 2rem;
+    }
+
+    .people-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .people-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .people-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .person-card {
+      background: #f9f9f9;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .person-card:hover {
+      transform: scale(1.05);
+    }
+
+    .person-card img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .person-card:hover img {
+      transform: scale(1.1);
+    }
+
+    .person-card h3 {
+      margin: 0 0 0.5rem;
+      color: #003366;
+      font-size: 1.1rem;
+    }
+
+    .person-card p {
+      font-size: 1.0rem;
+      margin: 0.3rem 0;
+      color: #333;
+    }
+
+    .person-card a {
+      color: #003366;
+      text-decoration: none;
+    }
+
+    .person-card a:hover {
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="people.html" class="active">People</a>
+  <a href="research.html">Research</a>
+  <a href="researchdata.html">Research Data</a>
+  <a href="news.html">News</a>
+  <a href="events.html">Events</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<div class="container">
+  <h1>Our People</h1>
+  <p>The research team comprises local faculty members from SMU’s School of Economics with expertise in related fields, working alongside a panel of international experts who bring established research credentials in production networks and global value chains.</p>
+  <h2 class="section-title">Faculty Members from SMU</h2>
+  <div class="people-grid">
+    <div class="person-card">
+      <img src="images/prof.chang.jpg" alt="Prof. Pao-Li CHANG">
+      <h3><a href="https://faculty.smu.edu.sg/profile/chang-pao-li-1201" target="_blank">CHANG, Pao Li</a></h3>
+      <p style="text-align: center;">Director / Lead PI</p>
+      <p style="text-align: center;">Associate Professor of Economics</p>
+      <p style="text-align: center;">Associate Dean (Research and Industry Engagement)</p>
+      <!--<p style="text-align: center;">Member, University Tribunal</p>-->
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/linma.jpg" alt="Prof. MA Lin">
+      <h3><a href="https://faculty.smu.edu.sg/profile/ma-lin-5836" target="_blank">MA, Lin</a></h3>
+      <p style="text-align: center;">Deputy Director / Co-PI</p>
+      <p style="text-align: center;">Associate Professor of Economics, School of Economics</p>
+      <!--<p style="text-align: center;">Lee Kong Chian Fellow</p>-->
+      <p style="text-align: center;">Urban Fellow (Urban Growth), Urban Institute</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/lijing.jpg" alt="Prof. Jing LI">
+      <h3><a href="https://economics.smu.edu.sg/faculty/profile/1906/li-jing" target="_blank">LI, Jing</a></h3>
+      <p style="text-align: center;">Co-PI</p>
+      <p style="text-align: center;">Associate Professor of Economics, School of Economics</p> 
+      <p style="text-align: center;">Pillar Lead (Urban Growth), Urban Institute</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/zlyang.jpg" alt="Prof. Zhenlin YANG">
+      <h3><a href="https://faculty.smu.edu.sg/profile/yang-zhenlin-1551" target="_blank">YANG, Zhenlin</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Professor of Economics & Statistics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/yuanmei.jpg" alt="Prof. Yuan MEI">
+      <h3><a href="https://faculty.smu.edu.sg/profile/mei-yuan-1366" target="_blank">MEI, Yuan</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/cyyang.jpg" alt="Prof. Chenying YANG">
+      <h3><a href="https://economics.smu.edu.sg/faculty/profile/5991/yang-chenying" target="_blank">YANG, Chenying</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/MarcMELITZ.jpeg" alt="Prof. Marc MELITZ">
+      <h3><a href="https://faculty.smu.edu.sg/profile/marc-melitz-8361" target="_blank">MELITZ, Marc</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Distinguished Term Professor</p>
+      <p style="text-align: center;">School of Economics</p>
+      <p style="text-align: center;">David A. Wells Professor of Political Economy</p>
+      <p style="text-align: center;">Harvard University</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/XUJianhuan.jpg" alt="Prof. XU Jianhuan">
+      <h3><a href="https://faculty.smu.edu.sg/profile/xu-jianhuan-1346" target="_blank">XU, Jianhuan</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Associate Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/yangjiao.png" alt="Prof. JIAO Yang">
+      <h3><a href="https://faculty.smu.edu.sg/profile/jiao-yang-7706" target="_blank">JIAO, Yang</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/DOULiyu.jpg" alt="Prof. DOU Liyu">
+      <h3><a href="https://faculty.smu.edu.sg/profile/dou-liyu-7416" target="_blank">DOU, Liyu</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/YoshikiANDO.jpg" alt="Prof. Yoshiki ANDO">
+      <h3><a href="https://faculty.smu.edu.sg/profile/yoshiki-ando-8081" target="_blank">ANDO, Yoshiki</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/CAOWenjia.jpg" alt="Prof. CAO Wenjia">
+      <h3><a href="https://faculty.smu.edu.sg/profile/cao-wenjia-8091" target="_blank">CAO, Wenjia</a></h3>
+      <!--<p style="text-align: center;">Collaborator</p>-->
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">School of Economics</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">External Collaborators</h2>
+  <div class="people-grid">
+    <div class="person-card">
+      <img src="images/denielyx.jpg" alt="Prof. Daniel XU">
+      <h3><a href="https://scholars.duke.edu/person/yi.xu" target="_blank">XU, Daniel</a></h3>
+      <p style="text-align: center;">David Rubenstein Distinguished Professor of Economics</p>
+      <p style="text-align: center;">Duke University</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/kikkawa.jpg" alt="Prof. Ayumu Ken KIKKAWA">
+      <h3><a href="https://www.sauder.ubc.ca/people/ayumu-ken-kikkawa" target="_blank">KIKKAWA, Ken</a></h3>
+      <p style="text-align: center;">Assistant Professor</p>
+      <p style="text-align: center;">University of British Columbia</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/yuhei.jpg" alt="Prof. Yuhei MIYAUCHI">
+      <h3><a href="https://sites.google.com/view/yuhei-miyauchi/home" target="_blank">MIYAUCHI, Yuhei</a></h3>
+      <p style="text-align: center;">Assistant Professor of Economics</p>
+      <p style="text-align: center;">Boston University</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/davinc.jpg" alt="Prof. Davin CHOR">
+      <h3><a href="https://tuck.dartmouth.edu/faculty/faculty-directory/davin-chor" target="_blank">CHOR, Davin</a></h3>
+      <p style="text-align: center;">Michael G. Fisch 1983 Professor and Globalization Chair</p>
+      <p style="text-align: center;">Tuck School of Business</p>
+      <p style="text-align: center;">Dartmouth College</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/tangy.jpg" alt="Prof. Yang TANG">
+      <h3><a href="http://www.yang-tang.net/? " target="_blank">TANG, Yang</a></h3>
+      <p style="text-align: center;">Associate Professor</p>
+      <p style="text-align: center;">Division of Economics</p>
+      <p style="text-align: center;">Nanyang Technological University</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/liuchen.png" alt="Prof. Chen LIU">
+      <h3><a href="https://fass.nus.edu.sg/ecs/people/liu-chen/" target="_blank">LIU, Chen</a></h3>
+      <p style="text-align: center;">Assistant Professor</p>
+      <p style="text-align: center;">Department of Economics</p>
+      <p style="text-align: center;">National University of Singapore</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">Research Staff</h2>
+  <div class="people-grid">
+    <!--<div class="person-card">
+      <img src="images/lam.jpg" alt="HO, Ngai-Lam">
+      <h3><a href="https://scholar.google.com/citations?user=Sjej_qMAAAAJ&hl=en" target="_blank">HO, Ngai-Lam</a></h3>
+      <p style="text-align: center;">Data Scientist</p>
+    </div>-->
+    
+    <div class="person-card">
+      <img src="images/kpw.jpg" alt="Khaing Phyo Wai">
+      <h3><a href="https://kpwai.github.io/" target="_blank">WAI, Khaing Phyo</a></h3>
+      <p style="text-align: center;">Data Scientist</p>
+    </div>
+
+    <!--<div class="person-card">
+      <img src="images/chunya-bu.jpg" alt="BU Chunya">
+      <h3><a href="https://sites.google.com/view/chunyabu" target="_blank">BU, Chunya</a></h3>
+      <p style="text-align: center;">Research Fellow</p>
+    </div>-->
+
+     <div class="person-card">
+      <img src="images/heq.jpg" alt="Qiugu HE">
+      <h3><a href="https://sites.google.com/view/qiugu-he/home" target="_blank">HE, Qiugu</a></h3>
+      <p style="text-align: center;">Research Fellow</p>
+    </div>
+    
+    <div class="person-card">
+      <img src="images/HY.jpg" alt="Yosuke Higashiyama">
+      <h3><a href="https://sites.google.com/view/yosuke-higashiyama" target="_blank">HIGASHIYAMA, Yosuke</a></h3>
+      <p style="text-align: center;">Research Fellow</p>
+    </div>
+    
+    <div class="person-card">
+      <img src="images/Wenze.jpg" alt="LI Wenze">
+      <h3><a href="https://li-wenze.github.io/" target="_blank">LI, Wenze</a></h3>
+      <p style="text-align: center;">Research Fellow</p>
+    </div>
+
+    <!--<div class="person-card">
+      <img src="images/TongNI.jpg" alt="NI Tong">
+      <h3><a href="https://tong-ni.github.io/" target="_blank">NI, Tong</a></h3>
+      <p style="text-align: center;">Research Assistant</p>
+    </div>-->
+
+    <div class="person-card">
+      <img src="images/ChenRuoqing.jpg" alt="CHEN Ruoqing">
+      <h3><a href="https://www.linkedin.com/in/ruoqing-chen" target="_blank">CHEN, Ruoqing</a></h3>
+      <p style="text-align: center;">Research Assistant</p>
+    </div>
+
+    <div class="person-card">
+      <img src="images/ggyl.jpg" alt="Gregory GWEE Yong Loong">
+      <h3>GWEE, Gregory Yong Loong</h3>
+      <p style="text-align: center;">Research Assistant</p>
+    </div>
+    
+    <div class="person-card">
+      <img src="images/XUEBohan.jpg" alt="XUE Bohan">
+      <h3>XUE, Bohan</h3>
+      <p style="text-align: center;">Research Assistant</p>
+    </div>
+   
+  </div>
+</div>
+
+</body>
+</html>

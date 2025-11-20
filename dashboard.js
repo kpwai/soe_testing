@@ -1,447 +1,612 @@
 // ========================================================
-// Trade Model (CP) Equilibrium Dashboard — HS6 + ISIC2
+// Trade Model (CP) Equilibrium Dashboard — Classification Version
+// Uses small lookup CSVs for controls + big tariff CSVs for trends
 // ========================================================
 
-// CSV paths
-const CSV_HS6 = "data/tariff_datahs6.csv";
-const CSV_HS8 = "data/tariff_datahs8.csv";   // used for ISIC2
+// ---- CONFIG: file paths ----
+var IMPORTERS_LIST_PATH = "data/importers_list.csv";   // col: importer
+var EXPORTERS_LIST_PATH = "data/exporters_list.csv";   // col: exporter
+var ISIC2_LIST_PATH     = "data/isic2_list.csv";       // col: isic2
+var HS6_LIST_PATH       = "data/hs6_list.csv";         // col: hs6
 
-// Global datasets
-let hs6Data = [];
-let hs8Data = [];
+var HS6_TARIFF_PATH     = "data/tariff_datahs6.csv";   // HS6 file
+var HS8_TARIFF_PATH     = "data/tariff_datahs8.csv";   // HS8 (ISIC2) file
 
-// Pre-calculated exporter list (from both datasets)
-let allExporters = new Set();
+// ---- LOOKUP ARRAYS ----
+var lookupImporters = [];   // ["World", "Cambodia", ...]
+var lookupExporters = [];   // ["Afghanistan", ...]
+var lookupIsic2     = [];   // ["01","02",...]
+var lookupHs6       = [];   // ["040299",...]
 
-// Active classification: "hs6", "isic2"
-let activeClassification = "";
 
-// --------------------------------------------------------
-// INITIALIZE WHEN PAGE READY
-// --------------------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  setupExporterDropdown();
+// ---- TARIFF DATA (unified shape) ----
+// Each row: { importer, exporter, code, date, tariff, tradeValue }
+var hs6Data = [];
+var hs8Data = [];
 
-  // Load HS6 first, then HS8, then build UI
-  loadCSV_HS6(() => {
-    loadCSV_HS8(() => {
-      populateExporterPanel();
-      setupClassificationHandler();
-      document.getElementById("applyFilters").addEventListener("click", applyFilters);
+// ========================================================
+// ON DOM READY
+// ========================================================
+document.addEventListener("DOMContentLoaded", function () {
+  setupExporterDropdownUI();
+
+  // Hook classification change → populate codeSelect
+  var clsSel = document.getElementById("classificationSelect");
+  if (clsSel) {
+    clsSel.addEventListener("change", function () {
+      populateCodeSelect();
     });
+  }
+
+  var applyBtn = document.getElementById("applyFilters");
+  if (applyBtn) {
+    applyBtn.addEventListener("click", applyFilters);
+  }
+
+  // Load lookups + big data in parallel
+  Promise.all([
+    loadLookupCSV(IMPORTERS_LIST_PATH, "importers"),
+    loadLookupCSV(EXPORTERS_LIST_PATH, "exporters"),
+    loadLookupCSV(ISIC2_LIST_PATH, "isic2"),
+    loadLookupCSV(HS6_LIST_PATH, "hs6"),
+    loadTariffCSV(HS6_TARIFF_PATH, "hs6"),
+    loadTariffCSV(HS8_TARIFF_PATH, "hs8")
+  ])
+  .then(function () {
+    populateStaticControls();   // importers, exporters, classification, code
+    applyFilters();             // initial view
+  })
+  .catch(function (err) {
+    console.error("Error initializing dashboard:", err);
+    var chartDiv = document.getElementById("tariffChart");
+    if (chartDiv) {
+      chartDiv.innerHTML =
+        "<p style='color:red'>Failed to load dashboard data. Please check CSV paths.</p>";
+    }
   });
 });
 
-// --------------------------------------------------------
-// LOAD HS6 CSV
-// --------------------------------------------------------
-function loadCSV_HS6(callback) {
-  fetch(CSV_HS6)
-    .then(r => r.text())
-    .then(text => {
-      const result = Papa.parse(text, { header: true, skipEmptyLines: true });
-      hs6Data = result.data.map(row => {
-
-        const d = new Date(row.date_eff);
-        if (isNaN(d)) return null;
-
-        const exporter = (row.exporter || "").trim();
-        const importer = (row.importer || "").trim();
-        const hs6code = (row.hs6 || "").trim();
-
-        const tariff = parseFloat(row.tariffs || 0);
-        const tradeValue = parseFloat(row.importsvaluein1000usd || 0) * 1000;
-
-        if (exporter) allExporters.add(exporter);
-
-        return {
-          importer,
-          exporter,
-          code: hs6code,
-          date: d,
-          tariff: isNaN(tariff) ? 0 : tariff,
-          tradeValue: isNaN(tradeValue) ? 0 : tradeValue
-        };
-      }).filter(x => x !== null);
-
-      console.log("HS6 Loaded:", hs6Data.length);
-      callback();
+// ========================================================
+// LOAD SMALL LOOKUP CSVs
+// ========================================================
+function loadLookupCSV(path, type) {
+  return fetch(path)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Failed to fetch " + path);
+      }
+      return response.text();
     })
-    .catch(err => console.error("Error loading HS6:", err));
+    .then(function (text) {
+      var result = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true
+      });
+
+      var rows = result.data;
+      var values = [];
+
+      if (type === "importers") {
+        for (var i = 0; i < rows.length; i++) {
+          var v = (rows[i].importer || "").trim();
+          if (v) values.push(v);
+        }
+        lookupImporters = dedupe(values);
+      } else if (type === "exporters") {
+        for (var j = 0; j < rows.length; j++) {
+          var e = (rows[j].exporter || "").trim();
+          if (e) values.push(e);
+        }
+        lookupExporters = dedupe(values);
+      } else if (type === "isic2") {
+        for (var k = 0; k < rows.length; k++) {
+          var c = (rows[k].isic2 || "").trim();
+          if (c) values.push(c);
+        }
+        lookupIsic2 = dedupe(values);
+      } else if (type === "hs6") {
+        for (var h = 0; h < rows.length; h++) {
+          var h6 = (rows[h].hs6 || "").trim();
+          if (h6) values.push(h6);
+        }
+        lookupHs6 = dedupe(values);
+      }
+    });
 }
 
-// --------------------------------------------------------
-// LOAD HS8 CSV (for ISIC2)
-// --------------------------------------------------------
-function loadCSV_HS8(callback) {
-  fetch(CSV_HS8)
-    .then(r => r.text())
-    .then(text => {
-      const result = Papa.parse(text, { header: true, skipEmptyLines: true });
-      hs8Data = result.data.map(row => {
-        const d = new Date(row.date_eff);
-        if (isNaN(d)) return null;
-
-        const exporter = (row.exporter || "").trim();
-        const importer = (row.importer || "").trim();
-        const hs8code = (row.product || "").trim();
-
-        const tariff = parseFloat(row.applied_tariff || 0);
-        const tradeValue = parseFloat(row.imports_value_usd || 0);
-
-        if (exporter) allExporters.add(exporter);
-
-        // Convert HS8 → ISIC2 = first 2 digits of HS8
-        let isic2 = hs8code.substring(0, 2);
-
-        return {
-          importer,
-          exporter,
-          code: isic2,
-          date: d,
-          tariff: isNaN(tariff) ? 0 : tariff,
-          tradeValue: isNaN(tradeValue) ? 0 : tradeValue
-        };
-      }).filter(x => x !== null);
-
-      console.log("HS8 Loaded (ISIC2 converted):", hs8Data.length);
-      callback();
-    })
-    .catch(err => console.error("Error loading HS8:", err));
+function dedupe(arr) {
+  var seen = {};
+  var out = [];
+  for (var i = 0; i < arr.length; i++) {
+    var v = arr[i];
+    if (!seen[v]) {
+      seen[v] = true;
+      out.push(v);
+    }
+  }
+  return out;
 }
 
-// --------------------------------------------------------
-// EXPORTER DROPDOWN UI
-// --------------------------------------------------------
-function setupExporterDropdown() {
-  const box = document.getElementById("exporterBox");
-  const display = document.getElementById("exporterDisplay");
+// ========================================================
+// LOAD BIG TARIFF CSVs (HS6 & HS8) into unified shape
+// ========================================================
+function loadTariffCSV(path, kind) {
+  return fetch(path)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Failed to fetch " + path);
+      }
+      return response.text();
+    })
+    .then(function (text) {
+      var result = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true
+      });
 
-  display.addEventListener("click", e => {
+      var rows = result.data;
+      var mapped = [];
+
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+
+        var d = new Date(row.date_eff);
+        if (isNaN(d.getTime())) continue; // skip bad date
+
+        if (kind === "hs6") {
+          // importer,exporter,hs6,date_eff,tariffs,importsvaluein1000usd,affected_trade_value
+          var imp = (row.importer || "").trim();
+          var exp = (row.exporter || "").trim();
+          var code = (row.hs6 || "").trim();
+          var tar = parseFloat(row.tariffs || 0);
+          var valTh = parseFloat(row.importsvaluein1000usd || 0);
+          var val = valTh * 1000; // convert to USD
+
+          mapped.push({
+            importer: imp,
+            exporter: exp,
+            code: code,
+            date: d,
+            tariff: isNaN(tar) ? 0 : tar,
+            tradeValue: isNaN(val) ? 0 : val
+          });
+        } else {
+          // HS8 file used for ISIC2 (or aggregated codes)
+          // importer,exporter,product,date_eff,applied_tariff,imports_value_usd,iseu
+          var imp8 = (row.importer || "").trim();
+          var exp8 = (row.exporter || "").trim();
+          var code8 = (row.product || "").trim();  // treat as classification code
+          var tar8 = parseFloat(row.applied_tariff || 0);
+          var val8 = parseFloat(row.imports_value_usd || 0);
+
+          mapped.push({
+            importer: imp8,
+            exporter: exp8,
+            code: code8,
+            date: d,
+            tariff: isNaN(tar8) ? 0 : tar8,
+            tradeValue: isNaN(val8) ? 0 : val8
+          });
+        }
+      }
+
+      if (kind === "hs6") {
+        hs6Data = mapped;
+      } else {
+        hs8Data = mapped;
+      }
+    });
+}
+
+// ========================================================
+// UI SETUP: EXPORTER MULTI-SELECT (checkbox panel)
+// ========================================================
+function setupExporterDropdownUI() {
+  var display = document.getElementById("exporterDisplay");
+  var panel = document.getElementById("exporterBox");
+
+  if (!display || !panel) return;
+
+  display.addEventListener("click", function (e) {
     e.stopPropagation();
-    box.style.display = box.style.display === "block" ? "none" : "block";
+    panel.style.display = (panel.style.display === "block") ? "none" : "block";
   });
 
-  document.addEventListener("click", () => box.style.display = "none");
-}
+  document.addEventListener("click", function () {
+    panel.style.display = "none";
+  });
 
-function populateExporterPanel() {
-  const box = document.getElementById("exporterBox");
-  box.innerHTML = "";
-
-  const exporters = [...allExporters].sort();
-
-  exporters.forEach(exp => {
-    const lbl = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.className = "exporter-checkbox";
-    cb.value = exp;
-
-    lbl.appendChild(cb);
-    lbl.appendChild(document.createTextNode(" " + exp));
-    box.appendChild(lbl);
+  panel.addEventListener("click", function (e) {
+    e.stopPropagation();
   });
 }
 
-function getSelectedExporters() {
-  const checkboxes = document.querySelectorAll(".exporter-checkbox:checked");
-  return Array.from(checkboxes).map(cb => cb.value);
-}
+function updateExporterDisplayText() {
+  var display = document.getElementById("exporterDisplay");
+  if (!display) return;
 
-function updateExporterDisplay() {
-  const selected = getSelectedExporters();
-  const text = document.getElementById("exporterDisplayText");
+  // Assume: first span inside exporterDisplay is the text span
+  var textSpan = display.querySelector("span");
+  if (!textSpan) return;
 
-  if (selected.length === 0) text.textContent = "World (aggregate)";
-  else if (selected.length === 1) text.textContent = selected[0];
-  else text.textContent = `${selected.length} exporters selected`;
-}
+  var cbs = document.querySelectorAll(".exporter-checkbox:checked");
 
-// --------------------------------------------------------
-// CLASSIFICATION SWITCHING (HS6 or ISIC2)
-// --------------------------------------------------------
-function setupClassificationHandler() {
-  const cls = document.getElementById("classificationSelect");
-  cls.addEventListener("change", () => {
-    activeClassification = cls.value;
-    showCorrectClassificationDetail();
-    populateClassificationDetailOptions();
-  });
-}
-
-function showCorrectClassificationDetail() {
-  const label = document.getElementById("classificationDetailLabel");
-  const hs6Sel = document.getElementById("hs6ProductSelect");
-  const isicSel = document.getElementById("isicSelect");
-
-  hs6Sel.style.display = "none";
-  isicSel.style.display = "none";
-  label.textContent = "";
-
-  if (activeClassification === "hs6") {
-    label.textContent = "HS6 product:";
-    hs6Sel.style.display = "block";
-  } else if (activeClassification === "isic2") {
-    label.textContent = "ISIC 2-digit:";
-    isicSel.style.display = "block";
+  if (!cbs || cbs.length === 0) {
+    textSpan.textContent = "World (all exporters)";
+  } else if (cbs.length === 1) {
+    textSpan.textContent = cbs[0].value;
+  } else {
+    textSpan.textContent = cbs.length + " exporters selected";
   }
 }
 
-function populateClassificationDetailOptions() {
-  if (activeClassification === "hs6") {
-    const sel = document.getElementById("hs6ProductSelect");
-    sel.innerHTML = `<option value="">All products</option>`;
-
-    const codes = new Set(hs6Data.map(x => x.code));
-    [...codes].sort().forEach(c => {
-      sel.innerHTML += `<option value="${c}">${c}</option>`;
-    });
+// ========================================================
+// POPULATE STATIC CONTROLS (importer, exporter, classification, code)
+// ========================================================
+function populateStaticControls() {
+  // Importers
+  var importerSelect = document.getElementById("importerSelect");
+  if (importerSelect) {
+    importerSelect.innerHTML = "";
+    for (var i = 0; i < lookupImporters.length; i++) {
+      var opt = document.createElement("option");
+      opt.value = lookupImporters[i];
+      opt.textContent = lookupImporters[i];
+      importerSelect.appendChild(opt);
+    }
+    // If "World" exists, select it by default
+    for (var j = 0; j < importerSelect.options.length; j++) {
+      if (importerSelect.options[j].value === "World") {
+        importerSelect.selectedIndex = j;
+        break;
+      }
+    }
   }
 
-  if (activeClassification === "isic2") {
-    const sel = document.getElementById("isicSelect");
-    sel.innerHTML = `<option value="">All ISIC</option>`;
+  // Exporters: checkboxes
+  var exporterBox = document.getElementById("exporterBox");
+  if (exporterBox) {
+    exporterBox.innerHTML = "";
+    for (var e = 0; e < lookupExporters.length; e++) {
+      var exp = lookupExporters[e];
+      var lbl = document.createElement("label");
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "exporter-checkbox";
+      cb.value = exp;
 
-    const codes = new Set(hs8Data.map(x => x.code));
-    [...codes].sort().forEach(c => {
-      sel.innerHTML += `<option value="${c}">${c}</option>`;
-    });
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(" " + exp));
+      exporterBox.appendChild(lbl);
+    }
+  }
+  updateExporterDisplayText();
+
+  // Classification select is assumed to be already in HTML:
+  // <select id="classificationSelect">
+  //   <option value="isic2">ISIC 2 digit</option>
+  //   <option value="hs6">HS6 product level</option>
+  // </select>
+  populateCodeSelect();
+}
+
+// Populate codeSelect based on current classification
+function populateCodeSelect() {
+  var clsSel = document.getElementById("classificationSelect");
+  var codeSel = document.getElementById("codeSelect");
+  if (!clsSel || !codeSel) return;
+
+  var cls = clsSel.value;   // "isic2" or "hs6"
+
+  codeSel.innerHTML = "";
+  var optAll = document.createElement("option");
+  optAll.value = "";
+  optAll.textContent = "All codes";
+  codeSel.appendChild(optAll);
+
+  var list = cls === "hs6" ? lookupHs6 : lookupIsic2;
+
+  for (var i = 0; i < list.length; i++) {
+    var op = document.createElement("option");
+    op.value = list[i];
+    op.textContent = list[i];
+    codeSel.appendChild(op);
   }
 }
 
-// --------------------------------------------------------
-// FILTER + DRAW
-// --------------------------------------------------------
+// ========================================================
+// APPLY FILTERS
+// ========================================================
 function applyFilters() {
-  updateExporterDisplay();
+  var clsSel = document.getElementById("classificationSelect");
+  if (!clsSel) return;
 
-  if (!activeClassification) {
-    alert("Please select a classification first.");
-    return;
-  }
-
-  const importer = document.getElementById("importerSelect").value;
-  const exporters = getSelectedExporters();
-  const dateFrom = document.getElementById("dateFrom").value;
-  const dateTo = document.getElementById("dateTo").value;
-
-  const start = dateFrom ? new Date(dateFrom) : null;
-  const end = dateTo ? new Date(dateTo) : null;
-
-  let codeFilter = "";
-  if (activeClassification === "hs6")
-    codeFilter = document.getElementById("hs6ProductSelect").value;
-  else
-    codeFilter = document.getElementById("isicSelect").value;
-
-  const data = activeClassification === "hs6" ? hs6Data : hs8Data;
-
-  // FILTERING
-  const out = data.filter(d => {
-
-    if (importer && d.importer !== importer) return false;
-
-    if (exporters.length > 0 && !exporters.includes(d.exporter)) return false;
-
-    if (codeFilter && d.code !== codeFilter) return false;
-
-    if (start && d.date < start) return false;
-    if (end && d.date > end) return false;
-
-    return true;
-  });
-
-  drawChart(out, exporters);
-  updateSummary(out, exporters);
-}
-
-// --------------------------------------------------------
-// DRAW TRUE-SCALED DATE-TREND
-// --------------------------------------------------------
-function drawChart(data, exporters) {
-  const div = document.getElementById("tariffChart");
+  var cls = clsSel.value;          // "isic2" -> hs8Data, "hs6" -> hs6Data
+  var data = (cls === "hs6") ? hs6Data : hs8Data;
 
   if (!data || data.length === 0) {
-    Plotly.newPlot(div, [], { title: "No data available" });
+    drawChart([], [], false);
+    updateSummary([], []);
     return;
   }
 
-  const worldMode = exporters.length === 0;
-  let traces = [];
-  let tickvals = [];
-  let ticktext = [];
+  var importerVal = document.getElementById("importerSelect").value; // "World" or specific
+  var codeVal = document.getElementById("codeSelect").value;
+
+  var dateFromVal = document.getElementById("dateFrom").value;
+  var dateToVal   = document.getElementById("dateTo").value;
+
+  var startDate = dateFromVal ? new Date(dateFromVal) : null;
+  var endDate   = dateToVal   ? new Date(dateToVal)   : null;
+
+  // exporters: multi-select
+  var cbs = document.querySelectorAll(".exporter-checkbox");
+  var selectedExporters = [];
+  for (var i = 0; i < cbs.length; i++) {
+    if (cbs[i].checked) selectedExporters.push(cbs[i].value);
+  }
+
+  updateExporterDisplayText();
+
+  var filtered = [];
+  for (var j = 0; j < data.length; j++) {
+    var row = data[j];
+
+    // Importer filter
+    if (importerVal && importerVal !== "World") {
+      if (row.importer !== importerVal) continue;
+    }
+
+    // Code filter (ISIC2 or HS6)
+    if (codeVal && row.code !== codeVal) continue;
+
+    // Exporter filter: if none selected → world (no filter)
+    if (selectedExporters.length > 0) {
+      if (selectedExporters.indexOf(row.exporter) === -1) continue;
+    }
+
+    // Date range
+    if (startDate && row.date < startDate) continue;
+    if (endDate && row.date > endDate) continue;
+
+    filtered.push(row);
+  }
+
+  drawChart(filtered, selectedExporters);
+  updateSummary(filtered, selectedExporters);
+}
+
+// ========================================================
+// DRAW CHART (TRUE DATE SCALING, LABEL EVERY DOT)
+// ========================================================
+function drawChart(data, selectedExporters) {
+  var chartDiv = document.getElementById("tariffChart");
+  if (!chartDiv) return;
+
+  if (!data || data.length === 0) {
+    Plotly.newPlot(chartDiv, [], { title: "No data available" });
+    return;
+  }
+
+  var worldMode = !selectedExporters || selectedExporters.length === 0;
+  var traces = [];
+  var tickvals = [];
+  var ticktext = [];
 
   if (worldMode) {
-    let grouped = {};
+    // Aggregate all exporters per date
+    var grouped = {};
+    for (var i = 0; i < data.length; i++) {
+      var d = data[i];
+      var dateKey = d.date.toLocaleDateString("en-US");
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(d.tariff);
+    }
 
-    data.forEach(d => {
-      let k = d.date.toLocaleDateString("en-US");
-      if (!grouped[k]) grouped[k] = [];
-      grouped[k].push(d.tariff);
+    var keys = Object.keys(grouped).sort(function (a, b) {
+      return new Date(a) - new Date(b);
     });
 
-    const keys = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
+    var dates = [];
+    var values = [];
 
-    let dates = [];
-    let vals = [];
+    for (var j = 0; j < keys.length; j++) {
+      var k = keys[j];
+      var arr = grouped[k];
+      var sum = 0;
+      for (var s = 0; s < arr.length; s++) sum += arr[s];
+      var avg = arr.length ? sum / arr.length : 0;
 
-    keys.forEach(k => {
-      dates.push(new Date(k));
-      vals.push(avg(grouped[k]));
-    });
+      dates.push(new Date(k));   // REAL date
+      values.push(avg);
+    }
 
     tickvals = dates;
     ticktext = keys;
 
     traces.push({
       x: dates,
-      y: vals,
+      y: values,
       mode: "lines+markers",
       name: "World",
       line: { shape: "hv", width: 3, color: "#003366" },
       marker: { size: 8, color: "#003366" }
     });
-
   } else {
-    let allDates = new Set();
+    // Multi-exporter lines
+    var dateSet = {};
+    for (var dIndex = 0; dIndex < data.length; dIndex++) {
+      var r = data[dIndex];
+      var dk = r.date.toLocaleDateString("en-US");
+      dateSet[dk] = true;
+    }
 
-    data.forEach(d => {
-      allDates.add(d.date.toLocaleDateString("en-US"));
+    var sortedKeys = Object.keys(dateSet).sort(function (a, b) {
+      return new Date(a) - new Date(b);
     });
+    var sortedDates = [];
+    for (var sd = 0; sd < sortedKeys.length; sd++) {
+      sortedDates.push(new Date(sortedKeys[sd]));
+    }
 
-    const keys = [...allDates].sort((a, b) => new Date(a) - new Date(b));
-    const dates = keys.map(k => new Date(k));
+    tickvals = sortedDates;
+    ticktext = sortedKeys;
 
-    tickvals = dates;
-    ticktext = keys;
+    for (var e = 0; e < selectedExporters.length; e++) {
+      var exp = selectedExporters[e];
 
-    exporters.forEach(exp => {
-      let grouped = {};
+      // tariffs by date for this exporter
+      var daily = {};
+      for (var rIndex = 0; rIndex < data.length; rIndex++) {
+        var row = data[rIndex];
+        if (row.exporter !== exp) continue;
+        var dayKey = row.date.toLocaleDateString("en-US");
+        if (!daily[dayKey]) daily[dayKey] = [];
+        daily[dayKey].push(row.tariff);
+      }
 
-      data.forEach(d => {
-        if (d.exporter !== exp) return;
-        let k = d.date.toLocaleDateString("en-US");
-        if (!grouped[k]) grouped[k] = [];
-        grouped[k].push(d.tariff);
-      });
-
-      let yvals = keys.map(k => grouped[k] ? avg(grouped[k]) : null);
+      var yvals = [];
+      for (var k2 = 0; k2 < sortedKeys.length; k2++) {
+        var sk = sortedKeys[k2];
+        if (!daily[sk]) {
+          yvals.push(null);
+        } else {
+          var arr2 = daily[sk];
+          var sum2 = 0;
+          for (var a = 0; a < arr2.length; a++) sum2 += arr2[a];
+          yvals.push(arr2.length ? sum2 / arr2.length : 0);
+        }
+      }
 
       traces.push({
-        x: dates,
+        x: sortedDates,
         y: yvals,
         mode: "lines+markers",
         name: exp,
         line: { shape: "hv", width: 2 },
         marker: { size: 7 }
       });
-    });
+    }
   }
 
-  Plotly.newPlot(div, traces, {
-    title: (activeClassification === "hs6" ? "HS6" : "ISIC 2-digit") + " Tariff Trend",
+  var layout = {
+    title: "Tariff Trend",
     xaxis: {
+      title: "Date",
       type: "date",
-      tickmode: "array",
-      tickvals,
-      ticktext,
-      tickangle: -45
+      tickmode: "array",   // force labels for each dot
+      tickvals: tickvals,
+      ticktext: ticktext,
+      tickangle: -45,
+      automargin: true
     },
     yaxis: { title: "Tariff (%)" },
-    showlegend: !worldMode,
-    font: { family: "Georgia, serif", size: 14 }
-  });
+    font: { family: "Georgia, serif", size: 14 },
+    plot_bgcolor: "#fff",
+    paper_bgcolor: "#fff",
+    showlegend: !worldMode
+  };
+
+  Plotly.newPlot(chartDiv, traces, layout);
 }
 
-// --------------------------------------------------------
-// SUMMARY TABLE
-// --------------------------------------------------------
-function updateSummary(data, exporters) {
-  const tbody = document.querySelector("#summaryTable tbody");
-  const title = document.getElementById("summary-title");
+// ========================================================
+// SUMMARY TABLE (single table, HS6 or HS8 depending on classification)
+// ========================================================
+function updateSummary(data, selectedExporters) {
+  var tbody = document.querySelector("#summaryTable tbody");
+  var titleEl = document.getElementById("summary-title");
+
+  if (!tbody || !titleEl) return;
 
   if (!data || data.length === 0) {
     tbody.innerHTML = "<tr><td colspan='7'>No data available</td></tr>";
-    title.textContent = "";
+    titleEl.textContent = "";
     return;
   }
 
-  let importer = document.getElementById("importerSelect").value || "World";
-  let productLabel = "All products";
+  var importerSel = document.getElementById("importerSelect").value;
+  var importerLabel = importerSel || "World";
 
-  if (activeClassification === "hs6") {
-    productLabel = document.getElementById("hs6ProductSelect").value || "All HS6";
+  var exporterLabel;
+  if (!selectedExporters || selectedExporters.length === 0) {
+    exporterLabel = "World";
+  } else if (selectedExporters.length === 1) {
+    exporterLabel = selectedExporters[0];
   } else {
-    productLabel = document.getElementById("isicSelect").value || "All ISIC2";
+    exporterLabel = "Selected exporters";
   }
 
-  let exporterLabel =
-      exporters.length === 0 ? "World" :
-      exporters.length === 1 ? exporters[0] :
-      "Multiple exporters";
+  var clsSel = document.getElementById("classificationSelect");
+  var codeSel = document.getElementById("codeSelect");
+  var codeLabel = (codeSel && codeSel.value) ? codeSel.value : "All codes";
+  var clsLabel = clsSel ? clsSel.options[clsSel.selectedIndex].text : "";
 
-  title.textContent = `${importer} imports from ${exporterLabel} — ${productLabel}`;
+  titleEl.textContent =
+    importerLabel + " imports from " + exporterLabel +
+    " — " + clsLabel + " : " + codeLabel;
 
-  let grouped = {};
+  // Group by exporter + date
+  var grouped = {};
+  for (var i = 0; i < data.length; i++) {
+    var d = data[i];
+    var dateKey = d.date.toLocaleDateString("en-US");
+    var key = d.exporter + "_" + dateKey;
 
-  data.forEach(d => {
-    let dk = d.date.toLocaleDateString("en-US");
-    let k = d.exporter + "_" + dk;
-
-    if (!grouped[k]) {
-      grouped[k] = {
+    if (!grouped[key]) {
+      grouped[key] = {
         exporter: d.exporter,
-        date: dk,
+        date: dateKey,
         tariffs: [],
-        weighted: [],
+        weightedTariffs: [],
         values: []
       };
     }
 
-    grouped[k].tariffs.push(d.tariff);
-    grouped[k].weighted.push(d.tariff * d.tradeValue);
-    grouped[k].values.push(d.tradeValue);
-  });
+    grouped[key].tariffs.push(d.tariff);
+    grouped[key].weightedTariffs.push(d.tariff * d.tradeValue);
+    grouped[key].values.push(d.tradeValue);
+  }
 
-  let html = "";
+  var groups = Object.keys(grouped).map(function (k) { return grouped[k]; });
 
-  Object.values(grouped).forEach(g => {
-    let avgT = avg(g.tariffs);
-    let totalV = sum(g.values);
-    let wAvg = totalV ? sum(g.weighted) / totalV : 0;
+  var htmlRows = "";
+  for (var g = 0; g < groups.length; g++) {
+    var grp = groups[g];
 
-    html += `
-      <tr>
-        <td>${g.exporter}</td>
-        <td>${g.date}</td>
-        <td>${avgT.toFixed(3)}</td>
-        <td>${wAvg.toFixed(3)}</td>
-        <td>${totalV.toFixed(0)}</td>
-        <td>100%</td>
-        <td>100%</td>
-      </tr>`;
-  });
+    var sumTar = 0;
+    for (var t = 0; t < grp.tariffs.length; t++) sumTar += grp.tariffs[t];
+    var simpleAvg = grp.tariffs.length ? sumTar / grp.tariffs.length : 0;
 
-  if ($.fn.DataTable.isDataTable("#summaryTable")) {
+    var sumVal = 0;
+    for (var v = 0; v < grp.values.length; v++) sumVal += grp.values[v];
+
+    var sumWV = 0;
+    for (var w = 0; w < grp.weightedTariffs.length; w++) sumWV += grp.weightedTariffs[w];
+    var tradeWeighted = sumVal ? sumWV / sumVal : 0;
+
+    htmlRows +=
+      "<tr>" +
+        "<td>" + grp.exporter + "</td>" +
+        "<td>" + grp.date + "</td>" +
+        "<td>" + simpleAvg.toFixed(3) + "</td>" +
+        "<td>" + tradeWeighted.toFixed(3) + "</td>" +
+        "<td>" + sumVal.toFixed(3) + "</td>" +
+        "<td>100%</td>" +
+        "<td>100%</td>" +
+      "</tr>";
+  }
+
+  // If you're using DataTables:
+  if (window.jQuery && $.fn.DataTable && $.fn.DataTable.isDataTable("#summaryTable")) {
     $("#summaryTable").DataTable().destroy();
   }
-  tbody.innerHTML = html;
+  tbody.innerHTML = htmlRows;
 
-  $("#summaryTable").DataTable({
-    pageLength: 5,
-    order: [[1, "asc"]]
-  });
-}
-
-// --------------------------------------------------------
-// HELPER FUNCTIONS
-// --------------------------------------------------------
-function avg(arr) {
-  if (!arr || arr.length === 0) return 0;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
-function sum(arr) {
-  return arr.reduce((a, b) => a + b, 0);
+  if (window.jQuery && $.fn.DataTable) {
+    $("#summaryTable").DataTable({
+      pageLength: 5,
+      order: [[1, "asc"]]
+    });
+  }
 }

@@ -267,32 +267,41 @@
   <div id="controls">
 
     <div class="control-row">
-      <!-- Importer -->
-      <div class="control-block">
-        <label>Importer:</label>
-        <select id="importerSelect"></select>
-      </div>
 
-      <!-- Exporter multi-select -->
-      <div class="control-block">
-        <label>Exporter:</label>
-        <div class="dropdown-container">
-          <div class="dropdown-display" id="exporterDisplay">
-            <span id="exporterDisplayText">World (aggregate)</span>
-            <span>▼</span>
-          </div>
-          <div id="exporterBox" class="checkbox-panel"></div>
-        </div>
-      </div>
+  <!-- Importer -->
+  <div class="control-block">
+    <label>Importer:</label>
+    <select id="importerSelect"></select>
+  </div>
 
-      <!-- Product -->
-      <div class="control-block">
-        <label>Product Code:</label>
-        <select id="productSelect">
-          <option value="">All products</option>
-        </select>
+  <!-- Exporter (Multi-select checkboxes) -->
+  <div class="control-block">
+    <label>Exporter:</label>
+    <div class="dropdown-container">
+      <div class="dropdown-display" id="exporterDisplay">
+        <span>Select exporters…</span>
+        <span class="dropdown-arrow">▼</span>
       </div>
+      <div id="exporterBox" class="checkbox-panel"></div>
     </div>
+  </div>
+
+  <!-- HS6 Product Level (NEW) -->
+  <div class="control-block">
+    <label>HS6 Product Level:</label>
+    <select id="hs6ProductSelect">
+      <option value="">All HS6 Products</option>
+    </select>
+  </div>
+
+  <!-- HS8 Product Code -->
+  <div class="control-block">
+    <label>Product Code (HS8):</label>
+    <select id="productSelect">
+      <option value="">All products</option>
+    </select>
+  </div>
+</div>
 
     <div class="date-row">
       <!-- From -->

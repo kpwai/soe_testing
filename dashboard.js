@@ -15,15 +15,17 @@ var currentTab = "hs6"; // "hs6" or "hs8"
 document.addEventListener("DOMContentLoaded", function () {
   setupTabs();
   setupExporterDropdown();
+
   document.getElementById("applyFilters").addEventListener("click", applyFilters);
 
-  // Load both datasets
+  // Load HS6 first, then HS8, then initialize UI
   loadCsv(HS6_PATH, "hs6", function () {
     loadCsv(HS8_PATH, "hs8", function () {
-      // After both loaded, initialize controls for HS6 and draw first view
-      currentTab = "hs6";
+
+      currentTab = "hs6"; // default tab
       populateControlsForCurrentTab();
       applyFilters();
+
     });
   });
 });
@@ -33,335 +35,209 @@ document.addEventListener("DOMContentLoaded", function () {
 // --------------------------------------------------------
 function loadCsv(path, type, callback) {
   fetch(path)
-    .then(function (response) {
-      if (!response.ok) {
-        throw new Error("Failed to load " + path);
-      }
-      return response.text();
-    })
-    .then(function (csvText) {
-      var result = Papa.parse(csvText, {
+    .then(resp => resp.text())
+    .then(csvText => {
+      var parsed = Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true
       });
 
-      var rows = result.data;
+      var rows = parsed.data;
       var mapped = [];
 
       for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
+        var r = rows[i];
+        var d = new Date(r.date_eff);
 
-        // Parse date (M/D/Y)
-        var d = new Date(row.date_eff);
-
-        if (isNaN(d.getTime())) {
-          // skip invalid date rows
-          continue;
-        }
+        if (isNaN(d)) continue;
 
         if (type === "hs6") {
-          // HS6: importer, exporter, hs6, date_eff, tariffs, importsvaluein1000usd, affected_trade_value
-          var importer = (row.importer || "").trim();
-          var exporter = (row.exporter || "").trim();
-          var product = (row.hs6 || "").trim();
-          var tariff = parseFloat(row.tariffs || 0);
-          var tradeValThousand = parseFloat(row.importsvaluein1000usd || 0);
-          var tradeValue = tradeValThousand * 1000; // convert to USD
-
           mapped.push({
-            importer: importer,
-            exporter: exporter,
-            product: product,
+            importer: (r.importer || "").trim(),
+            exporter: (r.exporter || "").trim(),
+            product: (r.hs6 || "").trim(),
             date: d,
-            tariff: isNaN(tariff) ? 0 : tariff,
-            tradeValue: isNaN(tradeValue) ? 0 : tradeValue
+            tariff: parseFloat(r.tariffs || 0),
+            tradeValue: parseFloat(r.importsvaluein1000usd || 0) * 1000
           });
+
         } else if (type === "hs8") {
-          // HS8: importer, exporter, product, date_eff, applied_tariff, imports_value_usd, iseu
-          var importer8 = (row.importer || "").trim();
-          var exporter8 = (row.exporter || "").trim();
-          var product8 = (row.product || "").trim();
-          var tariff8 = parseFloat(row.applied_tariff || 0);
-          var tradeValue8 = parseFloat(row.imports_value_usd || 0);
-
           mapped.push({
-            importer: importer8,
-            exporter: exporter8,
-            product: product8,
+            importer: (r.importer || "").trim(),
+            exporter: (r.exporter || "").trim(),
+            product: (r.product || "").trim(),
             date: d,
-            tariff: isNaN(tariff8) ? 0 : tariff8,
-            tradeValue: isNaN(tradeValue8) ? 0 : tradeValue8
+            tariff: parseFloat(r.applied_tariff || 0),
+            tradeValue: parseFloat(r.imports_value_usd || 0)
           });
         }
       }
 
-      if (type === "hs6") {
-        hs6Data = mapped;
-      } else {
-        hs8Data = mapped;
-      }
+      if (type === "hs6") hs6Data = mapped;
+      else hs8Data = mapped;
 
-      if (typeof callback === "function") {
-        callback();
-      }
+      if (callback) callback();
     })
-    .catch(function (err) {
-      console.error("Error loading", path, err);
-      if (type === "hs6") {
-        var div6 = document.getElementById("tariffChartHS6");
-        if (div6) {
-          div6.innerHTML = "<p style='color:red'>Failed to load HS6 data.</p>";
-        }
-      } else {
-        var div8 = document.getElementById("tariffChartHS8");
-        if (div8) {
-          div8.innerHTML = "<p style='color:red'>Failed to load HS8 data.</p>";
-        }
-      }
-      if (typeof callback === "function") {
-        callback();
-      }
-    });
+    .catch(err => console.error("CSV load error:", path, err));
 }
 
 // --------------------------------------------------------
-// Tabs: HS6 / HS8
+// Tabs
 // --------------------------------------------------------
 function setupTabs() {
-  var buttons = document.querySelectorAll(".tab-button");
+  var btns = document.querySelectorAll(".tab-button");
 
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].addEventListener("click", function () {
-      // Switch active button
-      for (var j = 0; j < buttons.length; j++) {
-        buttons[j].classList.remove("active");
-      }
+  btns.forEach(btn => {
+    btn.addEventListener("click", function () {
+
+      // switch highlight
+      btns.forEach(b => b.classList.remove("active"));
       this.classList.add("active");
 
-      // Switch tab content
-      var tab = this.getAttribute("data-tab");
-      currentTab = tab;
+      // switch active tab
+      currentTab = this.getAttribute("data-tab");
 
-      var contents = document.querySelectorAll(".tab-content");
-      for (var k = 0; k < contents.length; k++) {
-        contents[k].classList.remove("active");
-      }
-      var activeDiv = document.getElementById("tab-" + tab);
-      if (activeDiv) {
-        activeDiv.classList.add("active");
-      }
+      // show the correct container
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.getElementById("tab-" + currentTab).classList.add("active");
 
-      // Rebuild controls from the active dataset
+      // reload controls, redraw
       populateControlsForCurrentTab();
       applyFilters();
+
     });
-  }
+  });
 }
 
 // --------------------------------------------------------
-// Exporter checkbox dropdown behavior
+// Exporter dropdown
 // --------------------------------------------------------
 function setupExporterDropdown() {
-  var display = document.getElementById("exporterDisplay");
+  var disp = document.getElementById("exporterDisplay");
   var panel = document.getElementById("exporterBox");
 
-  if (!display || !panel) return;
-
-  display.addEventListener("click", function (e) {
+  disp.addEventListener("click", function (e) {
     e.stopPropagation();
-    if (panel.style.display === "block") {
-      panel.style.display = "none";
-    } else {
-      panel.style.display = "block";
-    }
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
   });
 
   document.addEventListener("click", function () {
     panel.style.display = "none";
   });
-
-  panel.addEventListener("click", function (e) {
-    e.stopPropagation();
-  });
 }
 
 function updateExporterDisplayText() {
-  var textSpan = document.getElementById("exporterDisplayText");
-  if (!textSpan) return;
-
   var cbs = document.querySelectorAll(".exporter-checkbox:checked");
-  if (!cbs || cbs.length === 0) {
-    textSpan.textContent = "World (aggregate)";
-    return;
-  }
+  var span = document.getElementById("exporterDisplayText");
 
-  if (cbs.length === 1) {
-    textSpan.textContent = cbs[0].value;
-  } else {
-    textSpan.textContent = cbs.length + " exporters selected";
-  }
+  if (!span) return;
+
+  if (cbs.length === 0) span.innerHTML = "World (aggregate)";
+  else if (cbs.length === 1) span.innerHTML = cbs[0].value;
+  else span.innerHTML = cbs.length + " exporters selected";
 }
 
 // --------------------------------------------------------
-// Controls population (per active tab)
+// Active dataset
 // --------------------------------------------------------
 function getActiveData() {
   return currentTab === "hs6" ? hs6Data : hs8Data;
 }
 
+// --------------------------------------------------------
+// Populate importers, exporters, products dynamically
+// --------------------------------------------------------
 function populateControlsForCurrentTab() {
   var data = getActiveData();
-  if (!data || data.length === 0) return;
+  if (!data.length) return;
 
-  // Importers
-  var importerSelect = document.getElementById("importerSelect");
-  importerSelect.innerHTML = "";
+  // IMPORTERS
+  var impSel = document.getElementById("importerSelect");
+  impSel.innerHTML = "";
 
-  var importersSet = {};
-  for (var i = 0; i < data.length; i++) {
-    importersSet[data[i].importer] = true;
-  }
-  var importers = Object.keys(importersSet).sort();
+  var impSet = [...new Set(data.map(d => d.importer))].sort();
 
-  // Add "All importers"
-  var optAll = document.createElement("option");
-  optAll.value = "";
-  optAll.textContent = "All importers";
-  importerSelect.appendChild(optAll);
+  impSel.innerHTML = `<option value="">All importers</option>` +
+    impSet.map(i => `<option value="${i}">${i}</option>`).join("");
 
-  for (var j = 0; j < importers.length; j++) {
-    var op = document.createElement("option");
-    op.value = importers[j];
-    op.textContent = importers[j];
-    importerSelect.appendChild(op);
-  }
-
-  // Exporters
+  // EXPORTERS (checkbox)
   var exporterBox = document.getElementById("exporterBox");
   exporterBox.innerHTML = "";
 
-  var exportersSet = {};
-  for (var k = 0; k < data.length; k++) {
-    exportersSet[data[k].exporter] = true;
-  }
-  var exporters = Object.keys(exportersSet).sort();
+  var expSet = [...new Set(data.map(d => d.exporter))].sort();
 
-  for (var e = 0; e < exporters.length; e++) {
-    var exp = exporters[e];
-    var label = document.createElement("label");
-    var cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.className = "exporter-checkbox";
-    cb.value = exp;
-
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(" " + exp));
-    exporterBox.appendChild(label);
-  }
+  expSet.forEach(e => {
+    exporterBox.innerHTML +=
+      `<label><input type='checkbox' class='exporter-checkbox' value='${e}'> ${e}</label>`;
+  });
 
   updateExporterDisplayText();
 
-  // Products
-  var productSelect = document.getElementById("productSelect");
-  productSelect.innerHTML = "";
+  // PRODUCT SELECTOR (HS6 uses hs6ProductSelect, HS8 uses hs8ProductSelect)
+  var productSet = [...new Set(data.map(d => d.product))].sort();
 
-  var pAll = document.createElement("option");
-  pAll.value = "";
-  pAll.textContent = "All products";
-  productSelect.appendChild(pAll);
-
-  var productSet = {};
-  for (var p = 0; p < data.length; p++) {
-    productSet[data[p].product] = true;
-  }
-  var products = Object.keys(productSet).sort();
-
-  for (var q = 0; q < products.length; q++) {
-    var po = document.createElement("option");
-    po.value = products[q];
-    po.textContent = products[q];
-    productSelect.appendChild(po);
+  if (currentTab === "hs6") {
+    var pSel = document.getElementById("hs6ProductSelect");
+    pSel.innerHTML = `<option value="">All HS6 codes</option>` +
+      productSet.map(p => `<option value="${p}">${p}</option>`).join("");
+  } else {
+    var pSel8 = document.getElementById("hs8ProductSelect");
+    pSel8.innerHTML = `<option value="">All HS8 codes</option>` +
+      productSet.map(p => `<option value="${p}">${p}</option>`).join("");
   }
 
-  // Reset date filters
+  // Reset date inputs
   document.getElementById("dateFrom").value = "";
   document.getElementById("dateTo").value = "";
 }
 
 // --------------------------------------------------------
-// Apply filters based on controls
+// Apply filters
 // --------------------------------------------------------
 function applyFilters() {
   var data = getActiveData();
-  if (!data || data.length === 0) return;
+  if (!data.length) return;
 
   var importerVal = document.getElementById("importerSelect").value;
-  var productVal = document.getElementById("productSelect").value;
+
+  var productVal =
+    currentTab === "hs6"
+      ? document.getElementById("hs6ProductSelect").value
+      : document.getElementById("hs8ProductSelect").value;
+
   var dateFromVal = document.getElementById("dateFrom").value;
   var dateToVal = document.getElementById("dateTo").value;
 
-  var startDate = dateFromVal ? new Date(dateFromVal) : null;
-  var endDate = dateToVal ? new Date(dateToVal) : null;
+  var start = dateFromVal ? new Date(dateFromVal) : null;
+  var end = dateToVal ? new Date(dateToVal) : null;
 
-  var exporterChecks = document.querySelectorAll(".exporter-checkbox");
-  var selectedExporters = [];
-  for (var i = 0; i < exporterChecks.length; i++) {
-    if (exporterChecks[i].checked) {
-      selectedExporters.push(exporterChecks[i].value);
-    }
-  }
+  var selectedExporters = [...document.querySelectorAll(".exporter-checkbox:checked")]
+    .map(cb => cb.value);
 
   updateExporterDisplayText();
 
-  var filtered = [];
-  for (var j = 0; j < data.length; j++) {
-    var d = data[j];
+  var filtered = data.filter(d => {
+    if (importerVal && d.importer !== importerVal) return false;
+    if (productVal && d.product !== productVal) return false;
+    if (selectedExporters.length && !selectedExporters.includes(d.exporter)) return false;
+    if (start && d.date < start) return false;
+    if (end && d.date > end) return false;
+    return true;
+  });
 
-    if (importerVal && d.importer !== importerVal) {
-      continue;
-    }
-
-    if (productVal && d.product !== productVal) {
-      continue;
-    }
-
-    if (selectedExporters.length > 0) {
-      if (selectedExporters.indexOf(d.exporter) === -1) {
-        continue;
-      }
-    }
-
-    if (startDate && d.date < startDate) {
-      continue;
-    }
-    if (endDate && d.date > endDate) {
-      continue;
-    }
-
-    filtered.push(d);
-  }
-
-  // Draw chart and summary for the active tab
-  if (currentTab === "hs6") {
-    drawChart("hs6", filtered, selectedExporters);
-    updateSummary("hs6", filtered, selectedExporters);
-  } else {
-    drawChart("hs8", filtered, selectedExporters);
-    updateSummary("hs8", filtered, selectedExporters);
-  }
+  drawChart(currentTab, filtered, selectedExporters);
+  updateSummary(currentTab, filtered, selectedExporters);
 }
 
 // --------------------------------------------------------
-// Draw chart (HS6 or HS8) with true date scaling
+// Draw Chart (true date scaling)
 // --------------------------------------------------------
 function drawChart(tabId, data, selectedExporters) {
-  var chartDivId = tabId === "hs6" ? "tariffChartHS6" : "tariffChartHS8";
-  var chartDiv = document.getElementById(chartDivId);
+  var divId = tabId === "hs6" ? "tariffChartHS6" : "tariffChartHS8";
+  var div = document.getElementById(divId);
 
-  if (!chartDiv) return;
-
-  if (!data || data.length === 0) {
-    Plotly.newPlot(chartDiv, [], { title: "No data available" });
+  if (!data.length) {
+    Plotly.newPlot(div, [], { title: "No data available" });
     return;
   }
 
@@ -370,39 +246,23 @@ function drawChart(tabId, data, selectedExporters) {
   var tickvals = [];
   var ticktext = [];
 
+  // ===== WORLD MODE =====
   if (worldMode) {
-    // Aggregate over all exporters per date
     var grouped = {};
-    var key;
 
-    for (var i = 0; i < data.length; i++) {
-      var d = data[i];
-      var dateKey = d.date.toLocaleDateString("en-US");
-      key = dateKey;
+    data.forEach(d => {
+      var key = d.date.toLocaleDateString("en-US");
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(d.tariff);
-    }
-
-    var keys = Object.keys(grouped).sort(function (a, b) {
-      return new Date(a) - new Date(b);
     });
 
-    var dates = [];
-    var values = [];
+    var ks = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
 
-    for (var j = 0; j < keys.length; j++) {
-      var k = keys[j];
-      var arr = grouped[k];
-      var sum = 0;
-      for (var s = 0; s < arr.length; s++) sum += arr[s];
-      var avg = sum / arr.length;
-
-      dates.push(new Date(k));
-      values.push(avg);
-    }
+    var dates = ks.map(k => new Date(k));
+    var values = ks.map(k => grouped[k].reduce((a, b) => a + b) / grouped[k].length);
 
     tickvals = dates;
-    ticktext = keys;
+    ticktext = ks;
 
     traces.push({
       x: dates,
@@ -412,61 +272,39 @@ function drawChart(tabId, data, selectedExporters) {
       line: { shape: "hv", width: 3, color: "#003366" },
       marker: { size: 8, color: "#003366" }
     });
+
   } else {
-    // Multi-exporter lines
-    var dateSet = {};
-    for (var dIndex = 0; dIndex < data.length; dIndex++) {
-      var d2 = data[dIndex];
-      var dk = d2.date.toLocaleDateString("en-US");
-      dateSet[dk] = true;
-    }
+    // ===== MULTI EXPORTER MODE =====
+    var dateKeys = [...new Set(data.map(d => d.date.toLocaleDateString("en-US")))]
+      .sort((a, b) => new Date(a) - new Date(b));
 
-    var sortedKeys = Object.keys(dateSet).sort(function (a, b) {
-      return new Date(a) - new Date(b);
-    });
-    var sortedDates = [];
-    for (var sd = 0; sd < sortedKeys.length; sd++) {
-      sortedDates.push(new Date(sortedKeys[sd]));
-    }
+    tickvals = dateKeys.map(k => new Date(k));
+    ticktext = dateKeys;
 
-    tickvals = sortedDates;
-    ticktext = sortedKeys;
+    selectedExporters.forEach(exp => {
+      var grouped = {};
 
-    for (var e = 0; e < selectedExporters.length; e++) {
-      var exp = selectedExporters[e];
+      data.forEach(d => {
+        if (d.exporter !== exp) return;
+        var k = d.date.toLocaleDateString("en-US");
+        if (!grouped[k]) grouped[k] = [];
+        grouped[k].push(d.tariff);
+      });
 
-      // collect tariffs by date for this exporter
-      var daily = {};
-      for (var r = 0; r < data.length; r++) {
-        var row = data[r];
-        if (row.exporter !== exp) continue;
-        var dayKey = row.date.toLocaleDateString("en-US");
-        if (!daily[dayKey]) daily[dayKey] = [];
-        daily[dayKey].push(row.tariff);
-      }
-
-      var yvals = [];
-      for (var k2 = 0; k2 < sortedKeys.length; k2++) {
-        var sk = sortedKeys[k2];
-        if (!daily[sk]) {
-          yvals.push(null);
-        } else {
-          var arr2 = daily[sk];
-          var sum2 = 0;
-          for (var a = 0; a < arr2.length; a++) sum2 += arr2[a];
-          yvals.push(sum2 / arr2.length);
-        }
-      }
+      var yvals = dateKeys.map(k => {
+        if (!grouped[k]) return null;
+        return grouped[k].reduce((a, b) => a + b) / grouped[k].length;
+      });
 
       traces.push({
-        x: sortedDates,
+        x: tickvals,
         y: yvals,
         mode: "lines+markers",
         name: exp,
         line: { shape: "hv", width: 2 },
         marker: { size: 7 }
       });
-    }
+    });
   }
 
   var layout = {
@@ -486,105 +324,84 @@ function drawChart(tabId, data, selectedExporters) {
     showlegend: !worldMode
   };
 
-  Plotly.newPlot(chartDiv, traces, layout);
+  Plotly.newPlot(div, traces, layout);
 }
 
 // --------------------------------------------------------
-// Summary table (HS6 / HS8)
+// Summary Tables (HS6 / HS8)
 // --------------------------------------------------------
 function updateSummary(tabId, data, selectedExporters) {
   var tableId = tabId === "hs6" ? "summaryTableHS6" : "summaryTableHS8";
   var titleId = tabId === "hs6" ? "summary-title-hs6" : "summary-title-hs8";
 
   var tbody = document.querySelector("#" + tableId + " tbody");
-  var titleEl = document.getElementById(titleId);
+  var title = document.getElementById(titleId);
 
-  if (!tbody || !titleEl) return;
-
-  if (!data || data.length === 0) {
+  if (!data.length) {
     tbody.innerHTML = "<tr><td colspan='7'>No data available</td></tr>";
-    titleEl.textContent = "";
+    title.textContent = "";
     return;
   }
 
-  var importerSel = document.getElementById("importerSelect").value;
-  var importerLabel = importerSel ? importerSel : "All importers";
+  var importer = document.getElementById("importerSelect").value || "All importers";
+  var product =
+    tabId === "hs6"
+      ? document.getElementById("hs6ProductSelect").value || "All HS6 codes"
+      : document.getElementById("hs8ProductSelect").value || "All HS8 codes";
 
-  var exporterLabel;
-  if (!selectedExporters || selectedExporters.length === 0) {
-    exporterLabel = "World";
-  } else if (selectedExporters.length === 1) {
-    exporterLabel = selectedExporters[0];
-  } else {
-    exporterLabel = "Selected exporters";
-  }
+  var exporterLabel =
+    selectedExporters.length === 0
+      ? "World"
+      : selectedExporters.length === 1
+        ? selectedExporters[0]
+        : "Selected exporters";
 
-  var productSel = document.getElementById("productSelect").value;
-  var productLabel = productSel ? productSel : "All products";
+  title.textContent = importer + " imports from " + exporterLabel + " — " + product;
 
-  titleEl.textContent =
-    importerLabel + " imports from " + exporterLabel + " — " + productLabel;
-
-  // Group by exporter + date
   var grouped = {};
-  var i;
-  for (i = 0; i < data.length; i++) {
-    var d = data[i];
-    var dateKey = d.date.toLocaleDateString("en-US");
-    var key = d.exporter + "_" + dateKey;
+
+  data.forEach(d => {
+    var dk = d.date.toLocaleDateString("en-US");
+    var key = d.exporter + "_" + dk;
 
     if (!grouped[key]) {
       grouped[key] = {
         exporter: d.exporter,
-        date: dateKey,
+        date: dk,
         tariffs: [],
-        weightedTariffs: [],
-        values: []
+        values: [],
+        weightedTariffs: []
       };
     }
-
     grouped[key].tariffs.push(d.tariff);
-    grouped[key].weightedTariffs.push(d.tariff * d.tradeValue);
     grouped[key].values.push(d.tradeValue);
-  }
-
-  var groups = Object.keys(grouped).map(function (k) {
-    return grouped[k];
+    grouped[key].weightedTariffs.push(d.tariff * d.tradeValue);
   });
 
-  // Build HTML rows
-  var htmlRows = "";
-  for (i = 0; i < groups.length; i++) {
-    var g = groups[i];
+  var html = "";
+  Object.values(grouped).forEach(g => {
+    var avg = g.tariffs.reduce((a, b) => a + b) / g.tariffs.length;
+    var total = g.values.reduce((a, b) => a + b);
+    var wavg = g.weightedTariffs.reduce((a, b) => a + b) / total;
 
-    var sumTar = 0;
-    for (var t = 0; t < g.tariffs.length; t++) sumTar += g.tariffs[t];
-    var simpleAvg = g.tariffs.length ? sumTar / g.tariffs.length : 0;
-
-    var sumVal = 0;
-    for (var v = 0; v < g.values.length; v++) sumVal += g.values[v];
-
-    var sumWV = 0;
-    for (var w = 0; w < g.weightedTariffs.length; w++) sumWV += g.weightedTariffs[w];
-    var tradeWeighted = sumVal ? sumWV / sumVal : 0;
-
-    htmlRows +=
+    html +=
       "<tr>" +
       "<td>" + g.exporter + "</td>" +
       "<td>" + g.date + "</td>" +
-      "<td>" + simpleAvg.toFixed(3) + "</td>" +
-      "<td>" + tradeWeighted.toFixed(3) + "</td>" +
-      "<td>" + sumVal.toFixed(3) + "</td>" +
+      "<td>" + avg.toFixed(3) + "</td>" +
+      "<td>" + wavg.toFixed(3) + "</td>" +
+      "<td>" + total.toFixed(3) + "</td>" +
       "<td>100%</td>" +
       "<td>100%</td>" +
       "</tr>";
-  }
+  });
 
-  // Rebuild DataTable
+  tbody.innerHTML = html;
+
   if ($.fn.DataTable.isDataTable("#" + tableId)) {
     $("#" + tableId).DataTable().destroy();
   }
-  tbody.innerHTML = htmlRows;
+
   $("#" + tableId).DataTable({
     pageLength: 5,
     order: [[1, "asc"]]

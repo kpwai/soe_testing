@@ -34,10 +34,12 @@
       border-radius: 4px 4px 0 0;
       transition: background-color 0.3s, color 0.3s;
     }
+
     nav a:hover {
       background-color: #ffcc00;
       color: #003366;
     }
+
     nav a.active {
       background-color: #ffcc00;
       color: #003366;
@@ -67,10 +69,11 @@
       gap: 1rem;
     }
 
+    /* 4-column grid for perfect alignment */
     .control-row,
     .date-row {
       display: grid;
-      grid-template-columns: repeat(4, auto);
+      grid-template-columns: repeat(4, 200px);
       column-gap: 2rem;
       align-items: flex-start;
     }
@@ -98,20 +101,22 @@
       box-sizing: border-box;
     }
 
-    /* Button */
+    /* Button styling */
     #applyFilters {
       border: none;
       background-color: #003366;
       color: white;
       font-weight: bold;
       cursor: pointer;
+      padding: 0.45rem 0.6rem;
     }
+
     #applyFilters:hover {
       background-color: #ffcc00;
       color: #003366;
     }
 
-    /* === Exporter Checkbox Dropdown === */
+    /* === EXPORTER CHECKBOX DROPDOWN === */
     .dropdown-container {
       width: 200px;
       position: relative;
@@ -134,12 +139,6 @@
       font-size: 0.95rem;
     }
 
-    .dropdown-display span {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
     .checkbox-panel {
       position: absolute;
       top: 36px;
@@ -160,9 +159,11 @@
       display: block;
       margin-bottom: 4px;
       cursor: pointer;
+      font-weight: normal;
+      color: #333;
     }
 
-    /* === TABLES === */
+    /* Summary Table */
     table.dataTable {
       width: 100%;
       background: #fff;
@@ -207,13 +208,12 @@
       .control-row,
       .date-row {
         grid-template-columns: 1fr;
-        row-gap: 0.8rem;
+        row-gap: 0.75rem;
       }
     }
   </style>
 
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
 </head>
 
 <body>
@@ -274,6 +274,7 @@
 
     <!-- ROW 2 -->
     <div class="date-row">
+
       <div class="control-block">
         <label>From:</label>
         <input type="date" id="dateFrom">
@@ -288,6 +289,10 @@
         <label>&nbsp;</label>
         <button id="applyFilters">Apply Filters</button>
       </div>
+
+      <!-- EMPTY BLOCK for alignment -->
+      <div class="control-block"></div>
+
     </div>
 
   </div>
@@ -328,6 +333,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
+<!-- Dashboard Script -->
 <script src="dashboard.js"></script>
 
 </body>

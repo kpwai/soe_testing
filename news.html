@@ -34,8 +34,10 @@
       border-radius: 4px 4px 0 0;
       transition: background-color 0.3s, color 0.3s;
     }
-
-    nav a:hover,
+    nav a:hover {
+      background-color: #ffcc00;
+      color: #003366;
+    }
     nav a.active {
       background-color: #ffcc00;
       color: #003366;
@@ -48,6 +50,7 @@
       padding: 2rem;
       background: #fff;
       border-radius: 8px;
+      font-family: Georgia, serif;
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
 
@@ -67,7 +70,7 @@
     .control-row,
     .date-row {
       display: grid;
-      grid-template-columns: repeat(3, auto);
+      grid-template-columns: repeat(4, auto);
       column-gap: 2rem;
       align-items: flex-start;
     }
@@ -90,25 +93,25 @@
       padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-size: 0.95rem;
       font-family: Georgia, serif;
+      font-size: 0.95rem;
       box-sizing: border-box;
     }
 
+    /* Button */
     #applyFilters {
+      border: none;
       background-color: #003366;
       color: white;
       font-weight: bold;
       cursor: pointer;
-      border: none;
     }
-
     #applyFilters:hover {
       background-color: #ffcc00;
       color: #003366;
     }
 
-    /* Exporter multi-select dropdown */
+    /* === Exporter Checkbox Dropdown === */
     .dropdown-container {
       width: 200px;
       position: relative;
@@ -128,6 +131,13 @@
       justify-content: space-between;
       align-items: center;
       box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    .dropdown-display span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .checkbox-panel {
@@ -150,50 +160,13 @@
       display: block;
       margin-bottom: 4px;
       cursor: pointer;
-      font-weight: normal;
-      color: #333;
     }
 
-    /* === TAB SYSTEM === */
-    .tab-buttons {
-      display: flex;
-      margin-top: 0.5rem;
-      border-bottom: 2px solid #003366;
-      margin-bottom: 1rem;
-    }
-
-    .tab-button {
-      padding: 10px 18px;
-      cursor: pointer;
-      background: #eee;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      margin-right: 5px;
-      font-weight: bold;
-      color: #003366;
-    }
-
-    .tab-button.active {
-      background: #003366;
-      color: white;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Tables */
+    /* === TABLES === */
     table.dataTable {
       width: 100%;
       background: #fff;
       border-collapse: collapse;
-      font-size: 0.95rem;
-      font-family: Georgia, serif;
     }
 
     table.dataTable thead {
@@ -208,8 +181,7 @@
       border: 1px solid #ddd;
     }
 
-    #summaryHS6,
-    #summaryHS8 {
+    #summary {
       background: #f8f9fa;
       padding: 1rem;
       border-radius: 6px;
@@ -217,8 +189,7 @@
       margin-top: 2rem;
     }
 
-    #summary-title-hs6,
-    #summary-title-hs8 {
+    #summary-title {
       font-style: italic;
       color: #444;
       margin-bottom: 0.6rem;
@@ -236,18 +207,18 @@
       .control-row,
       .date-row {
         grid-template-columns: 1fr;
+        row-gap: 0.8rem;
       }
     }
   </style>
 
-  <!-- DataTables CSS -->
-  <link rel="stylesheet"
-        href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
 </head>
 
 <body>
 
-<!-- NAVIGATION -->
+<!-- === NAVIGATION === -->
 <nav>
   <a href="index.html">Home</a>
   <a href="about.html">About</a>
@@ -261,62 +232,58 @@
 
 <div class="container">
   <h1>Trade Model (CP) Equilibrium Dashboard</h1>
-  <!--<h2>Tariff Actions</h2>-->
+  <h2>Tariff Actions</h2>
 
-  <!-- === SHARED FILTER CONTROLS (for both HS6 & HS8) === -->
+  <!-- === FILTER CONTROL AREA === -->
   <div id="controls">
 
+    <!-- ROW 1 -->
     <div class="control-row">
 
-  <!-- Importer -->
-  <div class="control-block">
-    <label>Importer:</label>
-    <select id="importerSelect"></select>
-  </div>
-
-  <!-- Exporter (Multi-select checkboxes) -->
-  <div class="control-block">
-    <label>Exporter:</label>
-    <div class="dropdown-container">
-      <div class="dropdown-display" id="exporterDisplay">
-        <span>Select exporters…</span>
-        <span class="dropdown-arrow">▼</span>
+      <div class="control-block">
+        <label>Importer:</label>
+        <select id="importerSelect"></select>
       </div>
-      <div id="exporterBox" class="checkbox-panel"></div>
+
+      <div class="control-block">
+        <label>Exporter:</label>
+        <div class="dropdown-container">
+          <div class="dropdown-display" id="exporterDisplay">
+            <span>Select exporters…</span>
+            <span>▼</span>
+          </div>
+          <div id="exporterBox" class="checkbox-panel"></div>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <label>HS6 Product Level:</label>
+        <select id="hs6ProductSelect">
+          <option value="">All HS6 Products</option>
+        </select>
+      </div>
+
+      <div class="control-block">
+        <label>HS8 Product Code:</label>
+        <select id="productSelect">
+          <option value="">All HS8 Products</option>
+        </select>
+      </div>
+
     </div>
-  </div>
 
-  <!-- HS6 Product Level (NEW) -->
-  <div class="control-block">
-    <label>HS6 Product Level:</label>
-    <select id="hs6ProductSelect">
-      <option value="">All HS6 Products</option>
-    </select>
-  </div>
-
-  <!-- HS8 Product Code -->
-  <div class="control-block">
-    <label>Product Code (HS8):</label>
-    <select id="productSelect">
-      <option value="">All products</option>
-    </select>
-  </div>
-</div>
-
+    <!-- ROW 2 -->
     <div class="date-row">
-      <!-- From -->
       <div class="control-block">
         <label>From:</label>
-        <input type="date" id="dateFrom" />
+        <input type="date" id="dateFrom">
       </div>
 
-      <!-- To -->
       <div class="control-block">
         <label>To:</label>
-        <input type="date" id="dateTo" />
+        <input type="date" id="dateTo">
       </div>
 
-      <!-- Apply -->
       <div class="control-block">
         <label>&nbsp;</label>
         <button id="applyFilters">Apply Filters</button>
@@ -325,61 +292,29 @@
 
   </div>
 
-  <!-- === TAB BUTTONS === -->
-  <div class="tab-buttons">
-    <div class="tab-button active" data-tab="hs6">HS6</div>
-    <div class="tab-button" data-tab="hs8">HS8</div>
-  </div>
+  <!-- === CHART === -->
+  <div id="tariffChart" style="margin-top:2rem;"></div>
 
-  <!-- === HS6 TAB CONTENT === -->
-  <div id="tab-hs6" class="tab-content active">
-    <h2>Tariff Actions</h2>
-    <div id="tariffChartHS6" style="margin-top:1rem;"></div>
+  <!-- === SUMMARY TABLE === -->
+  <section id="summary">
+    <h3>Details</h3>
+    <p id="summary-title"></p>
 
-    <section id="summaryHS6">
-      <h3>Details (HS6)</h3>
-      <p id="summary-title-hs6"></p>
-      <table id="summaryTableHS6" class="display">
-        <thead>
-          <tr>
-            <th>Partner</th>
-            <th>Date (MM/DD/YYYY)</th>
-            <th>Simple Avg Tariff</th>
-            <th>Weighted Avg Tariff</th>
-            <th>Affected Trade (USD)</th>
-            <th>Affected Trade Share</th>
-            <th>Affected Tariff Line Share</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
-
-  <!-- === HS8 TAB CONTENT === -->
-  <div id="tab-hs8" class="tab-content">
-    <h2>Tariff Actions</h2>
-    <div id="tariffChartHS8" style="margin-top:1rem;"></div>
-
-    <section id="summaryHS8">
-      <h3>Details (HS8)</h3>
-      <p id="summary-title-hs8"></p>
-      <table id="summaryTableHS8" class="display">
-        <thead>
-          <tr>
-            <th>Partner</th>
-            <th>Date (MM/DD/YYYY)</th>
-            <th>Simple Avg Tariff</th>
-            <th>Weighted Avg Tariff</th>
-            <th>Affected Trade (USD)</th>
-            <th>Affected Trade Share</th>
-            <th>Affected Tariff Line Share</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
+    <table id="summaryTable" class="display">
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th>Date (MM/DD/YYYY)</th>
+          <th>Simple Avg Tariff</th>
+          <th>Weighted Avg Tariff</th>
+          <th>Affected Trade (USD)</th>
+          <th>Affected Trade Share</th>
+          <th>Affected Tariff Line Share</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
 </div>
 
@@ -387,13 +322,12 @@
   © 2026 SMU Centre for Research on International Trade
 </footer>
 
-<!-- Libraries -->
+<!-- Dependencies -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-<!-- Dashboard Logic -->
 <script src="dashboard.js"></script>
 
 </body>

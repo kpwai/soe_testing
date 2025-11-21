@@ -784,8 +784,8 @@ function updateSummary(mode, data) {
       <tr>
         <td>${g.exporter}</td>
         <td>${g.date}</td>
-        <td>${avg(g.tariffs).toFixed(3)}</td>
-        <td>${weightedAvg(g.weighted, g.tv).toFixed(3)}</td>
+        <td>${avg(g.tariffs).toFixed(2)}</td>
+        <td>${weightedAvg(g.weighted, g.tv).toFixed(2)}</td>
         <td>${sum(g.aff).toFixed(0)}</td>
         <td>100%</td>
         <td>100%</td>
@@ -852,3 +852,4 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+

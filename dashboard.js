@@ -755,4 +755,3 @@ function updateEOSection(mode, data, isicVal, hs6Val, importerVal, selectedExpor
     eoCount + ".</p>" +
     "<p>This documentation section can be extended with specific Executive Order references or detailed legal text underpinning the tariff actions reflected in the data.</p>";
 }
-

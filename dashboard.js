@@ -564,11 +564,11 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
   // --- SET CHART TITLE ---
   let chartTitle;
   if (codeTitle) {
-      chartTitle = `Tariff Trend – ${codeTitle}`;
+      chartTitle = `Tariff Line – ${codeTitle}`;
   } else if (worldMode) {
-      chartTitle = "Tariff Trend – World";
+      chartTitle = "Tariff Line – World";
   } else {
-      chartTitle = "Tariff Trends – Selected Exporters";
+      chartTitle = "Tariff Lines – Selected Exporters";
   }
   // ------------------------------------
 
@@ -846,5 +846,6 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
 
 

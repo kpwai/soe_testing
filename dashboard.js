@@ -7,7 +7,7 @@ $.fn.dataTable.ext.errMode = "none";
 // File paths
 // =============================================================
 const EXPORTER_PATH = "data/exporters.csv";
-const ISIC_CODES_PATH = "data/isic4_2_product_name.csv";
+const ISIC_CODES_PATH = "data/isic2digit.csv";
 const HS6_CODES_PATH = "data/hs6code.csv";
 const ISIC_TARIFF_PATH = "data/isic2tariff.csv";
 const HS6_TARIFF_PATH = "data/hs6tariff.csv";
@@ -73,30 +73,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // =============================================================
 // INITIAL LOAD FUNCTION
-// This function runs once data is loaded to show the default state (All Importers, HS6).
 // =============================================================
 function initialLoadAndRender() {
   // 1. Set default controls state (HS6 is the default classification)
   document.getElementById("importerSelect").value = WORLD_IMPORTER_VALUE;
   document.getElementById("classSelect").value = "hs6";
-  disableCodeDropdowns(); // Ensure ISIC/HS6 selects are disabled
+  disableCodeDropdowns(); 
 
   // 2. Initial state is ALL data
   const initialData = hs6TariffData;
   const initialClass = "hs6";
 
-  // 3. Populate Exporter Dropdown (using all data to get all unique exporters)
+  // 3. Populate Exporter Dropdown 
   populateHs6Exporters(WORLD_IMPORTER_VALUE, initialData); 
 
-  // 4. Render with the full dataset (Exporters selected is empty array for 'World' view)
-  // We determine worldMode based on the selectedExporters array being empty
-  drawChart(initialData, [], true, initialClass, null); // Added initialClass and null for code
+  // 4. Render with the full dataset (World view)
+  drawChart(initialData, [], true, initialClass, null); 
   updateSummary(initialClass, initialData);
   updateEO(initialClass, initialData, WORLD_IMPORTER_VALUE, [], "", "", null, null);
 
-  // 5. Enable the correct code dropdown based on the default classification
+  // 5. Enable the correct code dropdown 
   enableHs6Only();
-  populateHs6(WORLD_IMPORTER_VALUE); // Populate HS6 codes from the full dataset
+  populateHs6(WORLD_IMPORTER_VALUE); 
 }
 
 
@@ -244,7 +242,7 @@ function loadTariff(path, mode, callback) {
           exporter,
           code,
           date: d,
-          tariff, // Corresponds to applied_tariff in your chart logic
+          tariff, 
           tradeValue,
           affectedTv,
           share,
@@ -261,7 +259,7 @@ function loadTariff(path, mode, callback) {
 }
 
 // =============================================================
-// Importer changed (reset everything else)
+// Importer / Classification Change Handlers
 // =============================================================
 function importerChanged() {
   let importer = document.getElementById("importerSelect").value;
@@ -302,9 +300,6 @@ function clearExporterList() {
   document.getElementById("exporterBox").innerHTML = "";
 }
 
-// =============================================================
-// Classification changed → Load exporters & codes
-// =============================================================
 function classificationChanged() {
   let importer = document.getElementById("importerSelect").value;
   let cls = document.getElementById("classSelect").value;
@@ -313,8 +308,6 @@ function classificationChanged() {
   disableCodeDropdowns();
 
   if (!importer || importer === WORLD_IMPORTER_VALUE) {
-    // If classification is changed while 'World' is selected, alert the user
-    // and reset the classification selector.
     alert("Please select a specific Importer country first to view its codes and exporters.");
     document.getElementById("classSelect").value = "";
     return;
@@ -334,7 +327,7 @@ function classificationChanged() {
 }
 
 // =============================================================
-// Enable / Disable dropdowns
+// Dropdown Enable/Disable
 // =============================================================
 function disableCodeDropdowns() {
   let isic = document.getElementById("isicSelect");
@@ -358,7 +351,7 @@ function enableHs6Only() {
 }
 
 // =============================================================
-// Populate ISIC and exporters
+// Populate Dropdowns
 // =============================================================
 function populateIsic(importer) {
   let sel = document.getElementById("isicSelect");
@@ -366,7 +359,6 @@ function populateIsic(importer) {
 
   let set = {};
   
-  // Determine source data: if importer is 'World', use all ISIC data; otherwise, filter.
   let sourceData = importer === WORLD_IMPORTER_VALUE 
     ? isicTariffData 
     : isicTariffData.filter(r => r.importer === importer);
@@ -391,7 +383,6 @@ function populateIsicExporters(importer, optionalData) {
 
   let set = {};
   
-  // Determine source data: use optionalData (for initial load) or filter based on importer.
   let sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
     ? isicTariffData 
     : isicTariffData.filter(r => r.importer === importer));
@@ -424,16 +415,12 @@ function populateIsicExporters(importer, optionalData) {
   resetExporterDisplay("World (All Exporters)");
 }
 
-// =============================================================
-// Populate HS6 and exporters
-// =============================================================
 function populateHs6(importer) {
   let sel = document.getElementById("hs6Select");
   sel.innerHTML = "<option value=''>All</option>";
 
   let set = {};
   
-  // Determine source data: if importer is 'World', use all HS6 data; otherwise, filter.
   let sourceData = importer === WORLD_IMPORTER_VALUE 
     ? hs6TariffData 
     : hs6TariffData.filter(r => r.importer === importer);
@@ -458,7 +445,6 @@ function populateHs6Exporters(importer, optionalData) {
 
   let set = {};
 
-  // Determine source data: use optionalData (for initial load) or filter based on importer.
   let sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
     ? hs6TariffData 
     : hs6TariffData.filter(r => r.importer === importer));
@@ -491,7 +477,7 @@ function populateHs6Exporters(importer, optionalData) {
 }
 
 // =============================================================
-// APPLY FILTERS (MODIFIED)
+// APPLY FILTERS
 // =============================================================
 function applyFilters() {
   let importer = document.getElementById("importerSelect").value;
@@ -528,30 +514,25 @@ function applyFilters() {
     selectedExp.push(x.value)
   );
   
-  // Determine if we are in "World Mode" (i.e., no specific exporters checked)
   const worldMode = selectedExp.length === 0;
 
   let base = cls === "isic" ? isicTariffData : hs6TariffData;
 
   let filtered = base.filter((r) => {
-    // 1. Importer Filter: If "World" is selected, skip the importer filter.
     if (importer !== WORLD_IMPORTER_VALUE && r.importer !== importer) return false;
 
-    // 2. Code Filter: Allow 'All' (empty string) to pass.
     if (cls === "isic" && isicC && isicC !== "" && r.code !== isicC) return false;
     if (cls === "hs6" && hs6C && hs6C !== "" && r.code !== hs6C) return false;
 
-    // 3. Exporter Filter: If selectedExp is empty, it means 'All Exporters' for the current Importer/World, so skip the filter.
     if (!worldMode && !selectedExp.includes(r.exporter)) return false;
 
-    // 4. Date Filter
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
 
     return true;
   });
 
-  // --- NEW LOGIC: DETERMINE CODE TITLE ---
+  // --- LOGIC: DETERMINE CODE TITLE ---
   let selectedCode = null;
   if (cls === 'hs6' && hs6C) {
       selectedCode = `HS6 Tariff Line ${hs6C}`;
@@ -562,17 +543,16 @@ function applyFilters() {
       selectedCode = cls === 'hs6' ? 'HS6 Tariff Line (All)' : 'ISIC4 2 Digit Tariff Line (All)';
   }
   
-  // Render the results. Pass selectedExp (even if empty) and worldMode
-  drawChart(filtered, selectedExp, worldMode, cls, selectedCode); // Passed selectedCode
+  drawChart(filtered, selectedExp, worldMode, cls, selectedCode); 
   updateSummary(cls, filtered);
   updateEO(cls, filtered, importer, selectedExp, isicC, hs6C, from, to);
 }
 
 // =============================================================
-// DRAW CHART (MODIFIED)
+// DRAW CHART
 // =============================================================
 function drawChart(data, exporters, worldMode, classification, codeTitle) {
-  var chartDiv = document.getElementById("tariffChartMain"); // Using the correct ID from your HTML
+  var chartDiv = document.getElementById("tariffChartMain");
 
   if (!data || data.length === 0) {
     Plotly.newPlot(chartDiv, [], { title: "No Data" });
@@ -581,7 +561,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 
   var traces = [];
   
-  // --- NEW LOGIC: SET CHART TITLE ---
+  // --- SET CHART TITLE ---
   let chartTitle;
   if (codeTitle) {
       chartTitle = `Tariff Trend – ${codeTitle}`;
@@ -598,10 +578,9 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
     var grouped = {};
 
     data.forEach(function (d) {
-      // Use the 'date' and 'tariff' properties from your loaded data structure
       var ds = d.date.toLocaleDateString("en-US"); 
       if (!grouped[ds]) grouped[ds] = [];
-      grouped[ds].push(d.tariff); // Use 'tariff'
+      grouped[ds].push(d.tariff);
     });
 
     var allDates = [];
@@ -629,7 +608,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
     });
 
     var layout = {
-      title: chartTitle, // Use the dynamically created title
+      title: chartTitle,
       xaxis: {
         title: "Date",
         type: "date",
@@ -651,7 +630,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 
   // MULTI-EXPORTER MODE
   var dateSet = new Set();
-  data.forEach(d => dateSet.add(d.date.toLocaleDateString("en-US"))); // Use 'date'
+  data.forEach(d => dateSet.add(d.date.toLocaleDateString("en-US")));
 
   var allLabels = Array.from(dateSet).sort((a,b) => new Date(a) - new Date(b));
   var allDates = allLabels.map(label => new Date(label));
@@ -662,9 +641,9 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 
     var dailyMap = {};
     rows.forEach(d => {
-      var ds = d.date.toLocaleDateString("en-US"); // Use 'date'
+      var ds = d.date.toLocaleDateString("en-US");
       if (!dailyMap[ds]) dailyMap[ds] = [];
-      dailyMap[ds].push(d.tariff); // Use 'tariff'
+      dailyMap[ds].push(d.tariff);
     });
 
     var x = [];
@@ -690,7 +669,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
   });
 
   var layout = {
-    title: chartTitle, // Use the dynamically created title
+    title: chartTitle,
     xaxis: {
       title: "Date",
       type: "date",
@@ -710,12 +689,31 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 }
 
 // =============================================================
-// SUMMARY TABLE
+// SUMMARY TABLE (FIXED DATATABLES RE-INITIALIZATION)
 // =============================================================
 function updateSummary(mode, data) {
   let tableIS = $("#summaryTableISIC");
   let tableHS = $("#summaryTableHS6");
 
+  // --- DESTROY EXISTING DATATABLES INSTANCES ---
+  if ($.fn.DataTable.isDataTable("#summaryTableISIC")) {
+    tableIS.DataTable().destroy();
+    // Remove the DataTable wrapper elements (info, pagination, etc.)
+    tableIS.closest('.dataTables_wrapper').remove(); 
+  }
+  if ($.fn.DataTable.isDataTable("#summaryTableHS6")) {
+    tableHS.DataTable().destroy();
+    // Remove the DataTable wrapper elements (info, pagination, etc.)
+    tableHS.closest('.dataTables_wrapper').remove();
+  }
+  // DataTables destruction must fully remove the wrapper elements to prevent residue.
+
+  // Re-append the clean table structure if it was removed by destroy/remove
+  // This step assumes your HTML has the static table tags (`<table id="summaryTableHS6">...</table>`)
+  // If the previous lines removed the table, you would need to recreate it here.
+  // Assuming the table element itself is static:
+  
+  // Hide both tables initially
   tableIS.hide();
   tableHS.hide();
 
@@ -750,11 +748,8 @@ function updateSummary(mode, data) {
 
   let rows = Object.values(grouped);
 
-  // Determine which table to show and destroy any existing DataTables instances
+  // Now process and show the correct table
   if (mode === "isic") {
-    if ($.fn.DataTable.isDataTable("#summaryTableISIC"))
-      $("#summaryTableISIC").DataTable().destroy();
-
     let tb = document.querySelector("#summaryTableISIC tbody");
     tb.innerHTML = "";
 
@@ -770,12 +765,10 @@ function updateSummary(mode, data) {
     });
 
     tableIS.show();
+    // Re-initialize DataTable after rows are inserted
     $("#summaryTableISIC").DataTable({ pageLength: 5 });
 
   } else { // mode === "hs6"
-    if ($.fn.DataTable.isDataTable("#summaryTableHS6"))
-      $("#summaryTableHS6").DataTable().destroy();
-
     let tb = document.querySelector("#summaryTableHS6 tbody");
     tb.innerHTML = "";
 
@@ -793,6 +786,7 @@ function updateSummary(mode, data) {
     });
 
     tableHS.show();
+    // Re-initialize DataTable after rows are inserted
     $("#summaryTableHS6").DataTable({ pageLength: 5 });
   }
 }
@@ -852,4 +846,3 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
-

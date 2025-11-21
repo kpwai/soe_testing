@@ -1,8 +1,13 @@
+// Disable DataTables auto error display in console
+if ($ && $.fn && $.fn.dataTable && $.fn.dataTable.ext) {
+  $.fn.dataTable.ext.errMode = 'none';
+}
+
 // ========================================================
 // Trade Model (CP) Equilibrium Dashboard — ISIC2 + HS6
 // ========================================================
 
-// CSV paths
+// CSV paths (confirmed)
 var EXPORTER_PATH    = "data/exporters.csv";
 var ISIC_CODE_PATH   = "data/isic4_2_product_name.csv";
 var HS6_CODE_PATH    = "data/hs6code.csv";
@@ -31,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
       loadHs6Options(function () {
         loadTariffCsv(ISIC_TARIFF_PATH, "isic", function () {
           loadTariffCsv(HS6_TARIFF_PATH, "hs6", function () {
-            // All data ready
             var btnApply = document.getElementById("applyFilters");
             if (btnApply) {
               btnApply.addEventListener("click", applyFilters);
@@ -118,7 +122,7 @@ function loadExporterOptions(callback) {
       if (typeof callback === "function") callback();
     },
     error: function (err) {
-      console.error("Error loading exporter.csv:", err);
+      console.error("Error loading exporters.csv:", err);
       if (typeof callback === "function") callback();
     }
   });
@@ -170,7 +174,7 @@ function loadIsicOptions(callback) {
       if (typeof callback === "function") callback();
     },
     error: function (err) {
-      console.error("Error loading isic2digit.csv:", err);
+      console.error("Error loading isic4_2_product_name.csv:", err);
       if (typeof callback === "function") callback();
     }
   });
@@ -179,7 +183,6 @@ function loadIsicOptions(callback) {
 function buildIsicSelect() {
   var sel = document.getElementById("isicSelect");
   if (!sel) return;
-  // keep the first "All"
   for (var i = 0; i < isicCodeList.length; i++) {
     var item = isicCodeList[i];
     var opt = document.createElement("option");
@@ -224,7 +227,6 @@ function loadHs6Options(callback) {
 function buildHs6Select() {
   var sel = document.getElementById("hs6Select");
   if (!sel) return;
-  // keep the first "All"
   for (var i = 0; i < hs6CodeList.length; i++) {
     var item = hs6CodeList[i];
     var opt = document.createElement("option");
@@ -327,7 +329,6 @@ function applyFilters() {
     if (eoDiv) {
       eoDiv.innerHTML = "<p>Please select only one classification (ISIC or HS6).</p>";
     }
-    // Hide tables
     showISICSummaryTable(false);
     showHS6SummaryTable(false);
     return;
@@ -545,38 +546,32 @@ function updateSummary(mode, data) {
     showHS6SummaryTable(true);
   }
 
+  // Always destroy any existing DataTables before rebuilding
+  if ($.fn.DataTable.isDataTable("#" + isicTableId)) {
+    $("#" + isicTableId).DataTable().clear().destroy();
+  }
+  if ($.fn.DataTable.isDataTable("#" + hs6TableId)) {
+    $("#" + hs6TableId).DataTable().clear().destroy();
+  }
+
+  // No data case: do NOT initialize DataTables, just show a simple row
   if (!data || data.length === 0) {
-    // No data: reset DataTables and show 1 row
     if (mode === "isic") {
-      if ($.fn.DataTable.isDataTable("#" + isicTableId)) {
-        $("#" + isicTableId).DataTable().destroy();
-      }
       var tbodyI = document.querySelector("#" + isicTableId + " tbody");
-      tbodyI.innerHTML =
-        "<tr>" +
-        "<td colspan='5' style='text-align:center;'>No data available</td>" +
-        "</tr>";
-      $("#" + isicTableId).DataTable({
-        paging: false,
-        searching: false,
-        info: false,
-        ordering: false
-      });
-    } else {
-      if ($.fn.DataTable.isDataTable("#" + hs6TableId)) {
-        $("#" + hs6TableId).DataTable().destroy();
+      if (tbodyI) {
+        tbodyI.innerHTML =
+          "<tr>" +
+          "<td colspan='5' style='text-align:center;'>No data available</td>" +
+          "</tr>";
       }
+    } else {
       var tbodyH = document.querySelector("#" + hs6TableId + " tbody");
-      tbodyH.innerHTML =
-        "<tr>" +
-        "<td colspan='7' style='text-align:center;'>No data available</td>" +
-        "</tr>";
-      $("#" + hs6TableId).DataTable({
-        paging: false,
-        searching: false,
-        info: false,
-        ordering: false
-      });
+      if (tbodyH) {
+        tbodyH.innerHTML =
+          "<tr>" +
+          "<td colspan='7' style='text-align:center;'>No data available</td>" +
+          "</tr>";
+      }
     }
     return;
   }
@@ -612,10 +607,8 @@ function updateSummary(mode, data) {
   var groups = Object.keys(grouped).map(function (k) { return grouped[k]; });
 
   if (mode === "isic") {
-    if ($.fn.DataTable.isDataTable("#" + isicTableId)) {
-      $("#" + isicTableId).DataTable().destroy();
-    }
     var tbodyISIC = document.querySelector("#" + isicTableId + " tbody");
+    if (!tbodyISIC) return;
 
     var htmlRowsI = "";
     for (var gI = 0; gI < groups.length; gI++) {
@@ -652,10 +645,8 @@ function updateSummary(mode, data) {
     });
 
   } else { // HS6 mode
-    if ($.fn.DataTable.isDataTable("#" + hs6TableId)) {
-      $("#" + hs6TableId).DataTable().destroy();
-    }
     var tbodyHS6 = document.querySelector("#" + hs6TableId + " tbody");
+    if (!tbodyHS6) return;
 
     var htmlRowsH = "";
     for (var gH = 0; gH < groups.length; gH++) {

@@ -55,7 +55,7 @@
       color: #003366;
     }
 
-    /* === FILTER CONTROLS LAYOUT (UPDATED) === */
+    /* === FILTER CONTROLS LAYOUT === */
     #controls {
       width: 100%;
       margin-bottom: 1.8rem;
@@ -117,8 +117,8 @@
       background: #fff;
       cursor: pointer;
       display: flex;
-      justify-content:space-between;
-      align-items:center;
+      justify-content: space-between;
+      align-items: center;
       box-sizing: border-box;
     }
 
@@ -135,39 +135,15 @@
       padding: 6px;
       display: none;
       z-index: 10;
+      box-sizing: border-box;
     }
 
-    /* === TAB SYSTEM === */
-    .tab-buttons {
-      display: flex;
-      margin-top: 0.5rem;
-      border-bottom: 2px solid #003366;
-      margin-bottom: 1rem;
-    }
-
-    .tab-button {
-      padding: 10px 18px;
-      cursor: pointer;
-      background: #eee;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      margin-right: 5px;
-      font-weight: bold;
-      color: #003366;
-    }
-
-    .tab-button.active {
-      background: #003366;
-      color: white;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
+    .checkbox-panel label {
       display: block;
+      margin-bottom: 4px;
+      cursor: pointer;
+      font-weight: normal;
+      color: #333;
     }
 
     /* Tables */
@@ -176,6 +152,7 @@
       border-collapse: collapse;
       background: #fff;
       font-size: 0.95rem;
+      font-family: Georgia, serif;
     }
 
     table.dataTable thead {
@@ -190,8 +167,7 @@
       text-align: center;
     }
 
-    #summaryHS6,
-    #summaryHS8 {
+    #summarySection {
       background: #f8f9fa;
       padding: 1rem;
       border-radius: 6px;
@@ -218,6 +194,12 @@
       color: white;
       text-align: center;
     }
+
+    @media (max-width: 768px) {
+      #controls {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 
   <link rel="stylesheet"
@@ -240,7 +222,7 @@
 <div class="container">
   <h1>Trade Model (CP) Equilibrium Dashboard</h1>
 
-  <!-- === UPDATED FILTER CONTROLS === -->
+  <!-- === FILTER CONTROLS === -->
   <div id="controls">
 
     <!-- LEFT COLUMN -->
@@ -287,7 +269,6 @@
 
     <!-- RIGHT COLUMN -->
     <div>
-
       <!-- ISIC 2-digit -->
       <div class="control-block">
         <label>ISIC 2 Digit:</label>
@@ -309,69 +290,53 @@
         <label>&nbsp;</label>
         <button id="applyFilters">Apply Filters</button>
       </div>
-
     </div>
 
   </div>
 
-  <!-- === TAB BUTTONS === -->
-  <div class="tab-buttons">
-    <div class="tab-button active" data-tab="hs6">HS6</div>
-    <div class="tab-button" data-tab="hs8">HS8</div>
-  </div>
+  <!-- === MAIN CHART === -->
+  <h2>Tariff Actions</h2>
+  <div id="tariffChartMain" style="margin-top:1rem;"></div>
 
-  <!-- === HS6 TAB === -->
-  <div id="tab-hs6" class="tab-content active">
-    <h2>Tariff Actions (HS6)</h2>
-    <div id="tariffChartHS6"></div>
+  <!-- === SUMMARY SECTION === -->
+  <section id="summarySection">
+    <h3>Summary</h3>
 
-    <section id="summaryHS6">
-      <h3>Summary (HS6)</h3>
-      <table id="summaryTableHS6" class="display">
-        <thead>
-          <tr>
-            <th>Partner</th>
-            <th>Date</th>
-            <th>Simple Avg</th>
-            <th>Weighted Avg</th>
-            <th>Affected Trade</th>
-            <th>Trade Share</th>
-            <th>Line Share</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
+    <!-- ISIC2 summary table (5 columns) -->
+    <table id="summaryTableISIC" class="display" style="width:100%; display:none;">
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th>Date</th>
+          <th>Simple Avg Tariff</th>
+          <th>Weighted Avg Tariff</th>
+          <th>Affected Trade (USD)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-  <!-- === HS8 TAB === -->
-  <div id="tab-hs8" class="tab-content">
-    <h2>Tariff Actions (HS8)</h2>
-    <div id="tariffChartHS8"></div>
+    <!-- HS6 summary table (7 columns) -->
+    <table id="summaryTableHS6" class="display" style="width:100%; display:none;">
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th>Date</th>
+          <th>Simple Avg Tariff</th>
+          <th>Weighted Avg Tariff</th>
+          <th>Affected Trade (USD)</th>
+          <th>Affected Trade Share</th>
+          <th>Affected Tariff Line Share</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
-    <section id="summaryHS8">
-      <h3>Summary (HS8)</h3>
-      <table id="summaryTableHS8" class="display">
-        <thead>
-          <tr>
-            <th>Partner</th>
-            <th>Date</th>
-            <th>Simple Avg</th>
-            <th>Weighted Avg</th>
-            <th>Affected Trade</th>
-            <th>Trade Share</th>
-            <th>Line Share</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </div>
-
-  <!-- === NEW: Executive Order Documentation === -->
+  <!-- === Executive Order Documentation === -->
   <section id="eoSection">
     <h3>Executive Order (EO) Documentation</h3>
-    <p>This section summarizes the Executive Orders influencing tariff decisions. The dashboard will automatically show the related EO details based on your selected filters.</p>
+    <p>This section summarizes the Executive Orders influencing tariff decisions. The dashboard will automatically show EO-related details based on your selected filters.</p>
     <div id="eoContent"></div>
   </section>
 

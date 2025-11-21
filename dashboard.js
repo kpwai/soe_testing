@@ -540,7 +540,7 @@ function applyFilters() {
       selectedCode = `ISIC4 2 Digit Tariff Line ${isicC}`;
   } else {
       // Use classification name if no specific code is selected
-      selectedCode = cls === 'hs6' ? 'HS6 Tariff Line (All)' : 'ISIC4 2 Digit Tariff Line (All)';
+      selectedCode = cls === 'hs6' ? 'HS6 Tariff Line' : 'ISIC4 2 Digit Tariff Line';
   }
   
   drawChart(filtered, selectedExp, worldMode, cls, selectedCode); 
@@ -846,6 +846,7 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
 
 
 

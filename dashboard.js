@@ -7,7 +7,7 @@ $.fn.dataTable.ext.errMode = "none";
 // File paths
 // =============================================================
 const EXPORTER_PATH = "data/exporters.csv";
-const ISIC_CODES_PATH = "data/isic2digit.csv";
+const ISIC_CODES_PATH = "data/isic4_2_product_name.csv";
 const HS6_CODES_PATH = "data/hs6code.csv";
 const ISIC_TARIFF_PATH = "data/isic2tariff.csv";
 const HS6_TARIFF_PATH = "data/hs6tariff.csv";
@@ -778,3 +778,4 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+

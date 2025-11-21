@@ -606,7 +606,7 @@ function drawChart(data, exporters, worldMode) {
     });
 
     var layout = {
-      title: "Tariff Trend – World",
+      title: "Tariff Line",
       xaxis: {
         title: "Date",
         type: "date",
@@ -667,7 +667,7 @@ function drawChart(data, exporters, worldMode) {
   });
 
   var layout = {
-    title: "Tariff Trends – Selected Exporters",
+    title: "Tariff Line",
     xaxis: {
       title: "Date",
       type: "date",
@@ -829,4 +829,5 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
 

@@ -566,7 +566,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
   if (codeTitle) {
       chartTitle = `Tariff Line – ${codeTitle}`;
   } else if (worldMode) {
-      chartTitle = "Tariff Line – World";
+      chartTitle = "HS6 Tariff Line";
   } else {
       chartTitle = "Tariff Lines – Selected Exporters";
   }
@@ -846,6 +846,7 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
 
 
 

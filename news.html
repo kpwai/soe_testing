@@ -147,7 +147,7 @@
     }
 
     /* Tables */
-    table.dataTable {
+    table.summaryTable {
       width: 100%;
       border-collapse: collapse;
       background: #fff;
@@ -155,13 +155,13 @@
       font-family: Georgia, serif;
     }
 
-    table.dataTable thead {
+    table.summaryTable thead {
       background-color: #003366;
       color: white;
     }
 
-    table.dataTable th,
-    table.dataTable td {
+    table.summaryTable th,
+    table.summaryTable td {
       padding: 0.6rem;
       border: 1px solid #ddd;
       text-align: center;
@@ -202,11 +202,13 @@
     }
   </style>
 
+  <!-- DataTables CSS -->
   <link rel="stylesheet"
         href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 </head>
 
 <body>
+
 <!-- NAVIGATION -->
 <nav>
   <a href="index.html">Home</a>
@@ -227,7 +229,6 @@
 
     <!-- LEFT COLUMN -->
     <div>
-      <!-- Importer -->
       <div class="control-block">
         <label>Importer:</label>
         <select id="importerSelect">
@@ -242,7 +243,6 @@
         </select>
       </div>
 
-      <!-- Exporter -->
       <div class="control-block">
         <label>Exporter:</label>
         <div class="dropdown-container">
@@ -254,13 +254,11 @@
         </div>
       </div>
 
-      <!-- From -->
       <div class="control-block">
         <label>From:</label>
         <input type="date" id="dateFrom" />
       </div>
 
-      <!-- To -->
       <div class="control-block">
         <label>To:</label>
         <input type="date" id="dateTo" />
@@ -269,7 +267,6 @@
 
     <!-- RIGHT COLUMN -->
     <div>
-      <!-- ISIC 2-digit -->
       <div class="control-block">
         <label>ISIC 2 Digit:</label>
         <select id="isicSelect">
@@ -277,7 +274,6 @@
         </select>
       </div>
 
-      <!-- HS6 Code -->
       <div class="control-block">
         <label>HS6 Code:</label>
         <select id="hs6Select">
@@ -285,7 +281,6 @@
         </select>
       </div>
 
-      <!-- Apply Button -->
       <div class="control-block">
         <label>&nbsp;</label>
         <button id="applyFilters">Apply Filters</button>
@@ -302,8 +297,8 @@
   <section id="summarySection">
     <h3>Summary</h3>
 
-    <!-- ISIC2 summary table (5 columns) -->
-    <table id="summaryTableISIC" class="display" style="width:100%; display:none;">
+    <!-- ISIC2 summary table -->
+    <table id="summaryTableISIC" class="summaryTable" style="display:none;">
       <thead>
         <tr>
           <th>Partner</th>
@@ -316,8 +311,8 @@
       <tbody></tbody>
     </table>
 
-    <!-- HS6 summary table (7 columns) -->
-    <table id="summaryTableHS6" class="display" style="width:100%; display:none;">
+    <!-- HS6 summary table -->
+    <table id="summaryTableHS6" class="summaryTable" style="display:none;">
       <thead>
         <tr>
           <th>Partner</th>
@@ -336,7 +331,7 @@
   <!-- === Executive Order Documentation === -->
   <section id="eoSection">
     <h3>Executive Order (EO) Documentation</h3>
-    <p>This section summarizes the Executive Orders influencing tariff decisions. The dashboard will automatically show EO-related details based on your selected filters.</p>
+    <p>This section summarizes the Executive Orders influencing tariff decisions. EO details will update automatically based on your selected filters.</p>
     <div id="eoContent"></div>
   </section>
 
@@ -346,6 +341,7 @@
   © 2026 SMU Centre for Research on International Trade
 </footer>
 
+<!-- Libraries -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

@@ -15,7 +15,7 @@
       color: #333;
     }
 
-    /* ================= NAV BAR ================= */
+    /* Navbar */
     nav {
       background-color: #003366;
       display: flex;
@@ -23,6 +23,7 @@
       flex-wrap: wrap;
       padding: 1rem 0;
     }
+
     nav a {
       color: white;
       text-decoration: none;
@@ -33,16 +34,14 @@
       border-radius: 4px 4px 0 0;
       transition: background-color 0.3s, color 0.3s;
     }
-    nav a:hover {
-      background-color: #ffcc00;
-      color: #003366;
-    }
+
+    nav a:hover,
     nav a.active {
       background-color: #ffcc00;
       color: #003366;
     }
 
-    /* ================= CONTAINER ================= */
+    /* Container */
     .container {
       max-width: 1100px;
       margin: 2rem auto;
@@ -52,90 +51,77 @@
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
 
-    h1, h2 {
+    h1, h2, h3 {
       color: #003366;
-      margin-top: 0;
     }
 
-    /* ================= FILTER CONTROLS ================= */
+    /* === FILTER CONTROLS LAYOUT (UPDATED) === */
     #controls {
       width: 100%;
       margin-bottom: 1.8rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-    }
-
-    .control-row,
-    .date-row {
       display: grid;
-      grid-template-columns: repeat(4, auto);
-      column-gap: 2rem;
-      align-items: flex-start;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
     }
 
     .control-block {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      margin-bottom: 0.8rem;
     }
 
     .control-block label {
       font-weight: bold;
       margin-bottom: 0.25rem;
-      color: #003366;
     }
 
-    select,
-    input[type="date"],
-    button {
-      width: 200px;
-      padding: 0.45rem 0.6rem;
+    .control-block select,
+    .control-block input[type="date"],
+    .control-block button {
+      width: 230px;
+      padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-family: Georgia, serif;
       font-size: 0.95rem;
       box-sizing: border-box;
     }
 
-    button {
+    #applyFilters {
       background-color: #003366;
       color: white;
       font-weight: bold;
       cursor: pointer;
       border: none;
     }
-    button:hover {
+
+    #applyFilters:hover {
       background-color: #ffcc00;
       color: #003366;
     }
 
-    /* ================= EXPORTER CHECKBOX DROPDOWN ================= */
+    /* Exporter multi-select dropdown */
     .dropdown-container {
-      width: 200px;
+      width: 230px;
       position: relative;
       display: flex;
       flex-direction: column;
     }
+
     .dropdown-display {
       width: 100%;
       height: 34px;
       padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      background: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #fff;
       cursor: pointer;
+      display: flex;
+      justify-content:space-between;
+      align-items:center;
       box-sizing: border-box;
     }
-    .dropdown-display span {
-      font-size: 0.95rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+
     .checkbox-panel {
       position: absolute;
       top: 36px;
@@ -148,44 +134,81 @@
       overflow-y: auto;
       padding: 6px;
       display: none;
-      z-index: 100;
-    }
-    .checkbox-panel label {
-      display: block;
-      margin-bottom: 4px;
-      cursor: pointer;
-      font-weight: normal;
+      z-index: 10;
     }
 
-    /* ================= SUMMARY TABLE ================= */
-    table {
+    /* === TAB SYSTEM === */
+    .tab-buttons {
+      display: flex;
+      margin-top: 0.5rem;
+      border-bottom: 2px solid #003366;
+      margin-bottom: 1rem;
+    }
+
+    .tab-button {
+      padding: 10px 18px;
+      cursor: pointer;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      margin-right: 5px;
+      font-weight: bold;
+      color: #003366;
+    }
+
+    .tab-button.active {
+      background: #003366;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Tables */
+    table.dataTable {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1.5rem;
+      background: #fff;
       font-size: 0.95rem;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 0.6rem;
-      text-align: center;
-    }
-    th {
+
+    table.dataTable thead {
       background-color: #003366;
       color: white;
     }
 
-    #summary {
-      margin-top: 2rem;
+    table.dataTable th,
+    table.dataTable td {
+      padding: 0.6rem;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    #summaryHS6,
+    #summaryHS8 {
       background: #f8f9fa;
       padding: 1rem;
       border-radius: 6px;
       border: 1px solid #ddd;
+      margin-top: 2rem;
     }
 
-    #summary-title {
-      font-style: italic;
-      margin-bottom: 0.6rem;
-      color: #444;
+    /* EO Documentation Section */
+    #eoSection {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #eef2f7;
+      border-left: 5px solid #003366;
+    }
+
+    #eoSection h3 {
+      margin-top: 0;
     }
 
     footer {
@@ -195,23 +218,14 @@
       color: white;
       text-align: center;
     }
-
-    @media (max-width: 768px) {
-      .control-row,
-      .date-row {
-        grid-template-columns: 1fr;
-        row-gap: 1rem;
-      }
-    }
   </style>
 
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
+  <link rel="stylesheet"
+        href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 </head>
-<body>
 
-<!-- ================= NAVIGATION ================= -->
+<body>
+<!-- NAVIGATION -->
 <nav>
   <a href="index.html">Home</a>
   <a href="about.html">About</a>
@@ -224,92 +238,141 @@
 </nav>
 
 <div class="container">
-
   <h1>Trade Model (CP) Equilibrium Dashboard</h1>
-  <h2>Tariff Actions</h2>
 
-  <!-- ================= FILTER CONTROLS ================= -->
+  <!-- === UPDATED FILTER CONTROLS === -->
   <div id="controls">
 
-    <div class="control-row">
-
+    <!-- LEFT COLUMN -->
+    <div>
       <!-- Importer -->
       <div class="control-block">
         <label>Importer:</label>
-        <select id="importerSelect"></select>
+        <select id="importerSelect">
+          <option value="World">World (All Importers)</option>
+          <option value="Cambodia">Cambodia</option>
+          <option value="Canada">Canada</option>
+          <option value="China">China</option>
+          <option value="India">India</option>
+          <option value="United Kingdom">United Kingdom</option>
+          <option value="United States">United States</option>
+          <option value="Zimbabwe">Zimbabwe</option>
+        </select>
       </div>
 
-      <!-- Exporter (Checkbox Panel) -->
+      <!-- Exporter -->
       <div class="control-block">
         <label>Exporter:</label>
         <div class="dropdown-container">
           <div class="dropdown-display" id="exporterDisplay">
-            <span>Select exporters…</span>
+            <span id="exporterDisplayText">World (All Exporters)</span>
             <span>▼</span>
           </div>
           <div id="exporterBox" class="checkbox-panel"></div>
         </div>
       </div>
 
-      <!-- Classification -->
+      <!-- From -->
       <div class="control-block">
-        <label>Classification:</label>
-        <select id="classificationSelect">
-          <option value="isic2">ISIC 2 digit</option>
-          <option value="hs6">HS6 product level</option>
+        <label>From:</label>
+        <input type="date" id="dateFrom" />
+      </div>
+
+      <!-- To -->
+      <div class="control-block">
+        <label>To:</label>
+        <input type="date" id="dateTo" />
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+
+      <!-- ISIC 2-digit -->
+      <div class="control-block">
+        <label>ISIC 2 Digit:</label>
+        <select id="isicSelect">
+          <option value="">All</option>
         </select>
       </div>
 
-      <!-- Code (auto-populated) -->
+      <!-- HS6 Code -->
       <div class="control-block">
-        <label>Code:</label>
-        <select id="codeSelect"></select>
+        <label>HS6 Code:</label>
+        <select id="hs6Select">
+          <option value="">All</option>
+        </select>
       </div>
 
-    </div>
-
-    <div class="date-row">
-
-      <div class="control-block">
-        <label>From:</label>
-        <input type="date" id="dateFrom">
-      </div>
-
-      <div class="control-block">
-        <label>To:</label>
-        <input type="date" id="dateTo">
-      </div>
-
+      <!-- Apply Button -->
       <div class="control-block">
         <label>&nbsp;</label>
         <button id="applyFilters">Apply Filters</button>
       </div>
 
     </div>
+
   </div>
 
-  <!-- ================= CHART ================= -->
-  <div id="tariffChart" style="margin-top:2rem;"></div>
+  <!-- === TAB BUTTONS === -->
+  <div class="tab-buttons">
+    <div class="tab-button active" data-tab="hs6">HS6</div>
+    <div class="tab-button" data-tab="hs8">HS8</div>
+  </div>
 
-  <!-- ================= SUMMARY TABLE ================= -->
-  <section id="summary">
-    <h3>Details</h3>
-    <p id="summary-title"></p>
+  <!-- === HS6 TAB === -->
+  <div id="tab-hs6" class="tab-content active">
+    <h2>Tariff Actions (HS6)</h2>
+    <div id="tariffChartHS6"></div>
 
-    <table id="summaryTable">
-      <thead>
-        <tr>
-          <th>Partner</th>
-          <th>Date (MM/DD/YYYY)</th>
-          <th>Simple Avg Tariff</th>
-          <th>Weighted Avg Tariff</th>
-          <th>Affected Trade (USD)</th>
-          <th>Affected Trade Share</th>
-          <th>Affected Tariff Line Share</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <section id="summaryHS6">
+      <h3>Summary (HS6)</h3>
+      <table id="summaryTableHS6" class="display">
+        <thead>
+          <tr>
+            <th>Partner</th>
+            <th>Date</th>
+            <th>Simple Avg</th>
+            <th>Weighted Avg</th>
+            <th>Affected Trade</th>
+            <th>Trade Share</th>
+            <th>Line Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- === HS8 TAB === -->
+  <div id="tab-hs8" class="tab-content">
+    <h2>Tariff Actions (HS8)</h2>
+    <div id="tariffChartHS8"></div>
+
+    <section id="summaryHS8">
+      <h3>Summary (HS8)</h3>
+      <table id="summaryTableHS8" class="display">
+        <thead>
+          <tr>
+            <th>Partner</th>
+            <th>Date</th>
+            <th>Simple Avg</th>
+            <th>Weighted Avg</th>
+            <th>Affected Trade</th>
+            <th>Trade Share</th>
+            <th>Line Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- === NEW: Executive Order Documentation === -->
+  <section id="eoSection">
+    <h3>Executive Order (EO) Documentation</h3>
+    <p>This section summarizes the Executive Orders influencing tariff decisions. The dashboard will automatically show the related EO details based on your selected filters.</p>
+    <div id="eoContent"></div>
   </section>
 
 </div>
@@ -318,13 +381,11 @@
   © 2026 SMU Centre for Research on International Trade
 </footer>
 
-<!-- Required Libraries -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-<!-- Your Dashboard JS -->
 <script src="dashboard.js"></script>
 
 </body>

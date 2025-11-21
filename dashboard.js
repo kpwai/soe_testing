@@ -764,8 +764,8 @@ function updateSummary(mode, data) {
         <td>${avg(g.tariffs).toFixed(3)}</td>
         <td>${weightedAvg(g.weighted, g.tv).toFixed(3)}</td>
         <td>${sum(g.aff).toFixed(0)}</td>
-        <td>${(avg(g.share) * 100).toFixed(2)}%</td>
-        <td>${(avg(g.line) * 100).toFixed(2)}%</td>
+        <td>100%</td>
+        <td>100%</td>
       </tr>`;
     });
 
@@ -829,5 +829,6 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
 
 

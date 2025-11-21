@@ -55,19 +55,17 @@
       color: #003366;
     }
 
-    /* === FILTER CONTROLS LAYOUT === */
+    /* === FILTER CONTROLS (2 Columns) === */
     #controls {
-      width: 100%;
-      margin-bottom: 1.8rem;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .control-block {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       margin-bottom: 0.8rem;
     }
 
@@ -100,7 +98,7 @@
       color: #003366;
     }
 
-    /* Exporter multi-select dropdown */
+    /* Exporter dropdown */
     .dropdown-container {
       width: 230px;
       position: relative;
@@ -110,7 +108,6 @@
 
     .dropdown-display {
       width: 100%;
-      height: 34px;
       padding: 0.4rem 0.6rem;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -118,41 +115,33 @@
       cursor: pointer;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      box-sizing: border-box;
     }
 
     .checkbox-panel {
       position: absolute;
       top: 36px;
-      left: 0;
       width: 100%;
       max-height: 180px;
-      background: #fff;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      background: white;
+      display: none;
       overflow-y: auto;
       padding: 6px;
-      display: none;
       z-index: 10;
-      box-sizing: border-box;
     }
 
-    .checkbox-panel label {
-      display: block;
-      margin-bottom: 4px;
-      cursor: pointer;
-      font-weight: normal;
-      color: #333;
-    }
-
-    /* Tables */
     table.summaryTable {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 1rem;
       background: #fff;
-      font-size: 0.95rem;
-      font-family: Georgia, serif;
+    }
+
+    table.summaryTable th,
+    table.summaryTable td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
     }
 
     table.summaryTable thead {
@@ -160,51 +149,24 @@
       color: white;
     }
 
-    table.summaryTable th,
-    table.summaryTable td {
-      padding: 0.6rem;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
     #summarySection {
       background: #f8f9fa;
       padding: 1rem;
+      border: 1px solid #ccc;
       border-radius: 6px;
-      border: 1px solid #ddd;
       margin-top: 2rem;
     }
 
-    /* EO Documentation Section */
     #eoSection {
       margin-top: 2rem;
       padding: 1rem;
       background: #eef2f7;
       border-left: 5px solid #003366;
     }
-
-    #eoSection h3 {
-      margin-top: 0;
-    }
-
-    footer {
-      margin-top: 3rem;
-      padding: 1rem;
-      background-color: #003366;
-      color: white;
-      text-align: center;
-    }
-
-    @media (max-width: 768px) {
-      #controls {
-        grid-template-columns: 1fr;
-      }
-    }
   </style>
 
   <!-- DataTables CSS -->
-  <link rel="stylesheet"
-        href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
 </head>
 
 <body>
@@ -227,11 +189,12 @@
   <!-- === FILTER CONTROLS === -->
   <div id="controls">
 
-    <!-- LEFT COLUMN -->
+    <!-- ================= FIRST COLUMN ================= -->
     <div>
       <div class="control-block">
         <label>Importer:</label>
         <select id="importerSelect">
+          <option value="">-- Select Importer --</option>
           <option value="World">World (All Importers)</option>
           <option value="Cambodia">Cambodia</option>
           <option value="Canada">Canada</option>
@@ -247,7 +210,7 @@
         <label>Exporter:</label>
         <div class="dropdown-container">
           <div class="dropdown-display" id="exporterDisplay">
-            <span id="exporterDisplayText">World (All Exporters)</span>
+            <span id="exporterDisplayText">Select Importer First</span>
             <span>▼</span>
           </div>
           <div id="exporterBox" class="checkbox-panel"></div>
@@ -265,18 +228,27 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN -->
+    <!-- ================= SECOND COLUMN ================= -->
     <div>
       <div class="control-block">
+        <label>Classification:</label>
+        <select id="classSelect">
+          <option value="">-- Select Classification --</option>
+          <option value="isic">ISIC 2 Digit</option>
+          <option value="hs6">HS6 Code</option>
+        </select>
+      </div>
+
+      <div class="control-block">
         <label>ISIC 2 Digit:</label>
-        <select id="isicSelect">
+        <select id="isicSelect" disabled>
           <option value="">All</option>
         </select>
       </div>
 
       <div class="control-block">
         <label>HS6 Code:</label>
-        <select id="hs6Select">
+        <select id="hs6Select" disabled>
           <option value="">All</option>
         </select>
       </div>
@@ -297,7 +269,6 @@
   <section id="summarySection">
     <h3>Summary</h3>
 
-    <!-- ISIC2 summary table (5 columns) -->
     <table id="summaryTableISIC" class="summaryTable" style="display:none;">
       <thead>
         <tr>
@@ -311,7 +282,6 @@
       <tbody></tbody>
     </table>
 
-    <!-- HS6 summary table (7 columns) -->
     <table id="summaryTableHS6" class="summaryTable" style="display:none;">
       <thead>
         <tr>
@@ -328,11 +298,10 @@
     </table>
   </section>
 
-  <!-- === Executive Order Documentation === -->
+  <!-- === Executive Orders === -->
   <section id="eoSection">
     <h3>Executive Order (EO) Documentation</h3>
-    <p>This section summarizes the Executive Orders influencing tariff decisions. EO details will update automatically based on your selected filters.</p>
-    <div id="eoContent"></div>
+    <div id="eoContent">No data yet.</div>
   </section>
 
 </div>
@@ -341,8 +310,8 @@
   © 2026 SMU Centre for Research on International Trade
 </footer>
 
-<!-- Libraries -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<!-- JS Libraries -->
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>

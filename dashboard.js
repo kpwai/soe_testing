@@ -90,7 +90,7 @@ function initialLoadAndRender() {
 
   // 4. Render with the full dataset (Exporters selected is empty array for 'World' view)
   // We determine worldMode based on the selectedExporters array being empty
-  drawChart(initialData, [], true); 
+  drawChart(initialData, [], true, initialClass, null); // Added initialClass and null for code
   updateSummary(initialClass, initialData);
   updateEO(initialClass, initialData, WORLD_IMPORTER_VALUE, [], "", "", null, null);
 
@@ -491,7 +491,7 @@ function populateHs6Exporters(importer, optionalData) {
 }
 
 // =============================================================
-// APPLY FILTERS
+// APPLY FILTERS (MODIFIED)
 // =============================================================
 function applyFilters() {
   let importer = document.getElementById("importerSelect").value;
@@ -551,16 +551,27 @@ function applyFilters() {
     return true;
   });
 
+  // --- NEW LOGIC: DETERMINE CODE TITLE ---
+  let selectedCode = null;
+  if (cls === 'hs6' && hs6C) {
+      selectedCode = `HS6 Tariff Line ${hs6C}`;
+  } else if (cls === 'isic' && isicC) {
+      selectedCode = `ISIC4 2 Digit Tariff Line ${isicC}`;
+  } else {
+      // Use classification name if no specific code is selected
+      selectedCode = cls === 'hs6' ? 'HS6 Tariff Line (All)' : 'ISIC4 2 Digit Tariff Line (All)';
+  }
+  
   // Render the results. Pass selectedExp (even if empty) and worldMode
-  drawChart(filtered, selectedExp, worldMode);
+  drawChart(filtered, selectedExp, worldMode, cls, selectedCode); // Passed selectedCode
   updateSummary(cls, filtered);
   updateEO(cls, filtered, importer, selectedExp, isicC, hs6C, from, to);
 }
 
 // =============================================================
-// DRAW CHART (UPDATED to match user's desired style and logic)
+// DRAW CHART (MODIFIED)
 // =============================================================
-function drawChart(data, exporters, worldMode) {
+function drawChart(data, exporters, worldMode, classification, codeTitle) {
   var chartDiv = document.getElementById("tariffChartMain"); // Using the correct ID from your HTML
 
   if (!data || data.length === 0) {
@@ -569,6 +580,18 @@ function drawChart(data, exporters, worldMode) {
   }
 
   var traces = [];
+  
+  // --- NEW LOGIC: SET CHART TITLE ---
+  let chartTitle;
+  if (codeTitle) {
+      chartTitle = `Tariff Trend – ${codeTitle}`;
+  } else if (worldMode) {
+      chartTitle = "Tariff Trend – World";
+  } else {
+      chartTitle = "Tariff Trends – Selected Exporters";
+  }
+  // ------------------------------------
+
 
   // WORLD MODE (aggregated)
   if (worldMode) {
@@ -606,7 +629,7 @@ function drawChart(data, exporters, worldMode) {
     });
 
     var layout = {
-      title: "Tariff Line",
+      title: chartTitle, // Use the dynamically created title
       xaxis: {
         title: "Date",
         type: "date",
@@ -667,7 +690,7 @@ function drawChart(data, exporters, worldMode) {
   });
 
   var layout = {
-    title: "Tariff Line",
+    title: chartTitle, // Use the dynamically created title
     xaxis: {
       title: "Date",
       type: "date",
@@ -761,8 +784,8 @@ function updateSummary(mode, data) {
       <tr>
         <td>${g.exporter}</td>
         <td>${g.date}</td>
-        <td>${avg(g.tariffs).toFixed(2)}</td>
-        <td>${weightedAvg(g.weighted, g.tv).toFixed(2)}</td>
+        <td>${avg(g.tariffs).toFixed(3)}</td>
+        <td>${weightedAvg(g.weighted, g.tv).toFixed(3)}</td>
         <td>${sum(g.aff).toFixed(0)}</td>
         <td>100%</td>
         <td>100%</td>
@@ -829,7 +852,3 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
-
-
-
-

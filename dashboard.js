@@ -25,7 +25,8 @@ let hs6TariffData = [];
 let isicLoaded = false;
 let hs6Loaded = false;
 
-const WORLD_IMPORTER = "World (All Importers)"; // Constant for the full/world dataset state
+// The HTML option value for "World (All Importers)" is just "World"
+const WORLD_IMPORTER_VALUE = "World"; 
 
 // =============================================================
 // DOM READY
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
               .getElementById("applyFilters")
               .addEventListener("click", applyFilters);
 
-            // NEW REQUIREMENT: Initial render on load
+            // INITIAL RENDER
             initialLoadAndRender();
           });
         });
@@ -71,12 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // =============================================================
-// INITIAL LOAD FUNCTION (NEW)
+// INITIAL LOAD FUNCTION
 // This function runs once data is loaded to show the default state (All Importers, HS6).
 // =============================================================
 function initialLoadAndRender() {
   // 1. Set default controls state (HS6 is the default classification)
-  document.getElementById("importerSelect").value = "World"; // The HTML option value is "World"
+  document.getElementById("importerSelect").value = WORLD_IMPORTER_VALUE;
   document.getElementById("classSelect").value = "hs6";
   disableCodeDropdowns(); // Ensure ISIC/HS6 selects are disabled
 
@@ -85,17 +86,16 @@ function initialLoadAndRender() {
   const initialClass = "hs6";
 
   // 3. Populate Exporter Dropdown (using all data to get all unique exporters)
-  // We use "World" as the key to populate exporters from the entire HS6 dataset
-  populateHs6Exporters("World", initialData); 
+  populateHs6Exporters(WORLD_IMPORTER_VALUE, initialData); 
 
   // 4. Render with the full dataset (Exporters selected is empty array for 'World' view)
   drawChart(initialData, []);
   updateSummary(initialClass, initialData);
-  updateEO(initialClass, initialData, "World", [], "", "", null, null);
+  updateEO(initialClass, initialData, WORLD_IMPORTER_VALUE, [], "", "", null, null);
 
   // 5. Enable the correct code dropdown based on the default classification
   enableHs6Only();
-  populateHs6("World"); // Populate HS6 codes from the full dataset
+  populateHs6(WORLD_IMPORTER_VALUE); // Populate HS6 codes from the full dataset
 }
 
 
@@ -261,7 +261,6 @@ function loadTariff(path, mode, callback) {
 
 // =============================================================
 // Importer changed (reset everything else)
-// MODIFIED: Logic updated to correctly handle the 'World' state and dynamic code/exporter population.
 // =============================================================
 function importerChanged() {
   let importer = document.getElementById("importerSelect").value;
@@ -275,7 +274,7 @@ function importerChanged() {
   document.getElementById("hs6Select").value = "";
 
   // 2. If World is selected, reset classification to force re-render/logic below
-  if (importer === "World") {
+  if (importer === WORLD_IMPORTER_VALUE) {
     document.getElementById("classSelect").value = "";
     resetExporterDisplay("World (All Exporters)");
     return;
@@ -304,7 +303,6 @@ function clearExporterList() {
 
 // =============================================================
 // Classification changed → Load exporters & codes
-// MODIFIED: Checks for "World" or empty importer selection.
 // =============================================================
 function classificationChanged() {
   let importer = document.getElementById("importerSelect").value;
@@ -313,7 +311,7 @@ function classificationChanged() {
   clearExporterList();
   disableCodeDropdowns();
 
-  if (!importer || importer === "World") {
+  if (!importer || importer === WORLD_IMPORTER_VALUE) {
     // If classification is changed while 'World' is selected, alert the user
     // and reset the classification selector.
     alert("Please select a specific Importer country first to view its codes and exporters.");
@@ -360,7 +358,6 @@ function enableHs6Only() {
 
 // =============================================================
 // Populate ISIC and exporters
-// MODIFIED: Added logic to handle 'World' population correctly.
 // =============================================================
 function populateIsic(importer) {
   let sel = document.getElementById("isicSelect");
@@ -369,7 +366,7 @@ function populateIsic(importer) {
   let set = {};
   
   // Determine source data: if importer is 'World', use all ISIC data; otherwise, filter.
-  let sourceData = importer === "World" 
+  let sourceData = importer === WORLD_IMPORTER_VALUE 
     ? isicTariffData 
     : isicTariffData.filter(r => r.importer === importer);
 
@@ -394,7 +391,7 @@ function populateIsicExporters(importer, optionalData) {
   let set = {};
   
   // Determine source data: use optionalData (for initial load) or filter based on importer.
-  let sourceData = optionalData || (importer === "World" 
+  let sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
     ? isicTariffData 
     : isicTariffData.filter(r => r.importer === importer));
 
@@ -428,7 +425,6 @@ function populateIsicExporters(importer, optionalData) {
 
 // =============================================================
 // Populate HS6 and exporters
-// MODIFIED: Added logic to handle 'World' population correctly.
 // =============================================================
 function populateHs6(importer) {
   let sel = document.getElementById("hs6Select");
@@ -437,7 +433,7 @@ function populateHs6(importer) {
   let set = {};
   
   // Determine source data: if importer is 'World', use all HS6 data; otherwise, filter.
-  let sourceData = importer === "World" 
+  let sourceData = importer === WORLD_IMPORTER_VALUE 
     ? hs6TariffData 
     : hs6TariffData.filter(r => r.importer === importer);
 
@@ -462,7 +458,7 @@ function populateHs6Exporters(importer, optionalData) {
   let set = {};
 
   // Determine source data: use optionalData (for initial load) or filter based on importer.
-  let sourceData = optionalData || (importer === "World" 
+  let sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
     ? hs6TariffData 
     : hs6TariffData.filter(r => r.importer === importer));
   
@@ -494,7 +490,7 @@ function populateHs6Exporters(importer, optionalData) {
 }
 
 // =============================================================
-// APPLY FILTERS (MODIFIED)
+// APPLY FILTERS
 // =============================================================
 function applyFilters() {
   let importer = document.getElementById("importerSelect").value;
@@ -535,7 +531,7 @@ function applyFilters() {
 
   let filtered = base.filter((r) => {
     // 1. Importer Filter: If "World" is selected, skip the importer filter.
-    if (importer !== "World" && r.importer !== importer) return false;
+    if (importer !== WORLD_IMPORTER_VALUE && r.importer !== importer) return false;
 
     // 2. Code Filter: Allow 'All' (empty string) to pass.
     if (cls === "isic" && isicC && isicC !== "" && r.code !== isicC) return false;
@@ -558,7 +554,7 @@ function applyFilters() {
 }
 
 // =============================================================
-// DRAW CHART
+// DRAW CHART (MODIFIED for true date scaling)
 // =============================================================
 function drawChart(data, selExp) {
   let div = document.getElementById("tariffChartMain");
@@ -630,11 +626,13 @@ function drawChart(data, selExp) {
     });
   }
 
+  // --- MODIFICATION HERE: Explicitly set axis type to 'date' ---
   Plotly.newPlot(div, traces, {
     title: "Tariff Trend",
-    xaxis: { title: "Date" },
+    xaxis: { title: "Date", type: "date" }, 
     yaxis: { title: "Tariff (%)" },
   });
+  // -----------------------------------------------------------
 }
 
 // =============================================================
@@ -780,4 +778,3 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
-

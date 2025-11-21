@@ -7,7 +7,7 @@ $.fn.dataTable.ext.errMode = "none";
 // File paths
 // =============================================================
 const EXPORTER_PATH = "data/exporters.csv";
-const ISIC_CODES_PATH = "data/isic4_2_product_name.csv";
+const ISIC_CODES_PATH = "data/isic2digit.csv";
 const HS6_CODES_PATH = "data/hs6code.csv";
 const ISIC_TARIFF_PATH = "data/isic2tariff.csv";
 const HS6_TARIFF_PATH = "data/hs6tariff.csv";
@@ -89,7 +89,8 @@ function initialLoadAndRender() {
   populateHs6Exporters(WORLD_IMPORTER_VALUE, initialData); 
 
   // 4. Render with the full dataset (Exporters selected is empty array for 'World' view)
-  drawChart(initialData, []);
+  // We determine worldMode based on the selectedExporters array being empty
+  drawChart(initialData, [], true); 
   updateSummary(initialClass, initialData);
   updateEO(initialClass, initialData, WORLD_IMPORTER_VALUE, [], "", "", null, null);
 
@@ -243,7 +244,7 @@ function loadTariff(path, mode, callback) {
           exporter,
           code,
           date: d,
-          tariff,
+          tariff, // Corresponds to applied_tariff in your chart logic
           tradeValue,
           affectedTv,
           share,
@@ -526,6 +527,9 @@ function applyFilters() {
   document.querySelectorAll(".exporter-checkbox:checked").forEach((x) =>
     selectedExp.push(x.value)
   );
+  
+  // Determine if we are in "World Mode" (i.e., no specific exporters checked)
+  const worldMode = selectedExp.length === 0;
 
   let base = cls === "isic" ? isicTariffData : hs6TariffData;
 
@@ -538,7 +542,7 @@ function applyFilters() {
     if (cls === "hs6" && hs6C && hs6C !== "" && r.code !== hs6C) return false;
 
     // 3. Exporter Filter: If selectedExp is empty, it means 'All Exporters' for the current Importer/World, so skip the filter.
-    if (selectedExp.length && !selectedExp.includes(r.exporter)) return false;
+    if (!worldMode && !selectedExp.includes(r.exporter)) return false;
 
     // 4. Date Filter
     if (from && r.date < from) return false;
@@ -547,92 +551,139 @@ function applyFilters() {
     return true;
   });
 
-  // Render the results
-  drawChart(filtered, selectedExp);
+  // Render the results. Pass selectedExp (even if empty) and worldMode
+  drawChart(filtered, selectedExp, worldMode);
   updateSummary(cls, filtered);
   updateEO(cls, filtered, importer, selectedExp, isicC, hs6C, from, to);
 }
 
 // =============================================================
-// DRAW CHART (MODIFIED for true date scaling)
+// DRAW CHART (UPDATED to match user's desired style and logic)
 // =============================================================
-function drawChart(data, selExp) {
-  let div = document.getElementById("tariffChartMain");
+function drawChart(data, exporters, worldMode) {
+  var chartDiv = document.getElementById("tariffChartMain"); // Using the correct ID from your HTML
 
-  if (!data.length) {
-    Plotly.newPlot(div, [], { title: "No data available" });
+  if (!data || data.length === 0) {
+    Plotly.newPlot(chartDiv, [], { title: "No Data" });
     return;
   }
 
-  let world = selExp.length === 0;
+  var traces = [];
 
-  let dateList = {};
-  data.forEach((r) => {
-    dateList[r.date.toLocaleDateString("en-US")] = true;
-  });
+  // WORLD MODE (aggregated)
+  if (worldMode) {
+    var grouped = {};
 
-  let sortedDates = Object.keys(dateList)
-    .sort((a, b) => new Date(a) - new Date(b))
-    .map((x) => new Date(x));
-
-  let traces = [];
-
-  if (world) {
-    let group = {};
-
-    data.forEach((r) => {
-      let d = r.date.toLocaleDateString("en-US");
-      group[d] = group[d] || [];
-      group[d].push(r.tariff);
+    data.forEach(function (d) {
+      // Use the 'date' and 'tariff' properties from your loaded data structure
+      var ds = d.date.toLocaleDateString("en-US"); 
+      if (!grouped[ds]) grouped[ds] = [];
+      grouped[ds].push(d.tariff); // Use 'tariff'
     });
 
-    let ys = sortedDates.map((d) => {
-      let k = d.toLocaleDateString("en-US");
-      let arr = group[k] || [];
-      if (!arr.length) return 0;
-      return arr.reduce((a, b) => a + b, 0) / arr.length;
+    var allDates = [];
+    var allLabels = [];
+    var allValues = [];
+
+    Object.keys(grouped)
+      .sort((a, b) => new Date(a) - new Date(b))
+      .forEach(function (key) {
+        allDates.push(new Date(key));
+        allLabels.push(key);
+
+        var arr = grouped[key];
+        var avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+        allValues.push(avg);
+      });
+
+    traces.push({
+      x: allDates,
+      y: allValues,
+      mode: "lines+markers",
+      name: "World",
+      line: { shape: "hv", width: 3, color: "#003366" },
+      marker: { size: 8, color: "#003366" }
+    });
+
+    var layout = {
+      title: "Tariff Trend – World",
+      xaxis: {
+        title: "Date",
+        type: "date",
+        tickmode: "array",
+        tickvals: allDates,
+        ticktext: allLabels,
+        tickangle: -45
+      },
+      yaxis: { title: "Tariff (%)" },
+      font: { family: "Georgia, serif", size: 12 },
+      plot_bgcolor: "#fff",
+      paper_bgcolor: "#fff",
+      showlegend: false
+    };
+
+    Plotly.newPlot(chartDiv, traces, layout);
+    return;
+  }
+
+  // MULTI-EXPORTER MODE
+  var dateSet = new Set();
+  data.forEach(d => dateSet.add(d.date.toLocaleDateString("en-US"))); // Use 'date'
+
+  var allLabels = Array.from(dateSet).sort((a,b) => new Date(a) - new Date(b));
+  var allDates = allLabels.map(label => new Date(label));
+
+  exporters.forEach(function (exp) {
+    var rows = data.filter(d => d.exporter === exp);
+    if (rows.length === 0) return;
+
+    var dailyMap = {};
+    rows.forEach(d => {
+      var ds = d.date.toLocaleDateString("en-US"); // Use 'date'
+      if (!dailyMap[ds]) dailyMap[ds] = [];
+      dailyMap[ds].push(d.tariff); // Use 'tariff'
+    });
+
+    var x = [];
+    var y = [];
+
+    allLabels.forEach(function (label) {
+      if (dailyMap[label]) {
+        var arr = dailyMap[label];
+        var avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+        x.push(new Date(label));
+        y.push(avg);
+      }
     });
 
     traces.push({
-      x: sortedDates,
-      y: ys,
+      x: x,
+      y: y,
       mode: "lines+markers",
-      name: "World",
+      name: exp,
+      line: { shape: "hv", width: 3 },
+      marker: { size: 8 }
     });
-  } else {
-    selExp.forEach((exp) => {
-      let group = {};
-
-      data.forEach((r) => {
-        let d = r.date.toLocaleDateString("en-US");
-        if (r.exporter !== exp) return;
-        group[d] = group[d] || [];
-        group[d].push(r.tariff);
-      });
-
-      let ys = sortedDates.map((d) => {
-        let k = d.toLocaleDateString("en-US");
-        let arr = group[k] || [];
-        if (!arr.length) return null;
-        return arr.reduce((a, b) => a + b, 0) / arr.length;
-      });
-
-      traces.push({
-        x: sortedDates,
-        y: ys,
-        mode: "lines+markers",
-        name: exp,
-      });
-    });
-  }
-
-  // --- MODIFICATION HERE: Explicitly set axis type to 'date' ---
-  Plotly.newPlot(div, traces, {
-    title: "Tariff Trend",
-    xaxis: { title: "Date", type: "date" }, 
-    yaxis: { title: "Tariff (%)" },
   });
-  // -----------------------------------------------------------
+
+  var layout = {
+    title: "Tariff Trends – Selected Exporters",
+    xaxis: {
+      title: "Date",
+      type: "date",
+      tickmode: "array",
+      tickvals: allDates,
+      ticktext: allLabels,
+      tickangle: -45
+    },
+    yaxis: { title: "Tariff (%)" },
+    font: { family: "Georgia, serif", size: 12 },
+    plot_bgcolor: "#fff",
+    paper_bgcolor: "#fff",
+    showlegend: true
+  };
+
+  Plotly.newPlot(chartDiv, traces, layout);
 }
 
 // =============================================================
@@ -778,4 +829,3 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
-

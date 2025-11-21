@@ -3,21 +3,19 @@
 // ========================================================
 
 // CSV paths
-var EXPORTER_PATH      = "data/exporters.csv";
-var ISIC_CODE_PATH     = "data/isic4_2_product_name.csv";
-var HS6_CODE_PATH      = "data/hs6code.csv";
-var ISIC_TARIFF_PATH   = "data/isic2tariff.csv";
-var HS6_TARIFF_PATH    = "data/hs6tariff.csv";
+var EXPORTER_PATH    = "data/exporter.csv";
+var ISIC_CODE_PATH   = "data/isic2digit.csv";
+var HS6_CODE_PATH    = "data/hs6code.csv";
+var ISIC_TARIFF_PATH = "data/isic2tariff.csv";
+var HS6_TARIFF_PATH  = "data/hs6tariff.csv";
 
 // Global data
 var exporterList = [];
-var isicCodeList = [];   // { code, description }
-var hs6CodeList  = [];   // { code, name }
+var isicCodeList = [];
+var hs6CodeList  = [];
 
-var isicTariffData = []; // rows from isic2tariff.csv
-var hs6TariffData  = []; // rows from hs6tariff.csv
-
-var currentTab = "hs6";  // "hs6" or "hs8" (just controls which chart/table DOM gets updated)
+var isicTariffData = [];
+var hs6TariffData  = [];
 
 var isicTariffLoaded = false;
 var hs6TariffLoaded  = false;
@@ -26,27 +24,24 @@ var hs6TariffLoaded  = false;
 // DOM Ready
 // --------------------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
-  setupTabs();
   setupExporterDropdown();
 
-  // Load selection lists first, then tariff data, then draw
   loadExporterOptions(function () {
     loadIsicOptions(function () {
       loadHs6Options(function () {
         loadTariffCsv(ISIC_TARIFF_PATH, "isic", function () {
           loadTariffCsv(HS6_TARIFF_PATH, "hs6", function () {
-            // All data loaded; initial draw
+            // All data ready
+            var btnApply = document.getElementById("applyFilters");
+            if (btnApply) {
+              btnApply.addEventListener("click", applyFilters);
+            }
             applyFilters();
           });
         });
       });
     });
   });
-
-  var btnApply = document.getElementById("applyFilters");
-  if (btnApply) {
-    btnApply.addEventListener("click", applyFilters);
-  }
 });
 
 // --------------------------------------------------------
@@ -54,47 +49,14 @@ document.addEventListener("DOMContentLoaded", function () {
 // --------------------------------------------------------
 function normalizeIsic2(codeRaw) {
   if (!codeRaw) return "";
-  var digits = String(codeRaw).replace(/\D/g, "");  // keep digits only
+  var digits = String(codeRaw).replace(/\D/g, "");
   if (!digits) return "";
-  if (digits.length >= 2) {
-    return digits.slice(0, 2);                     // take first 2 digits
-  }
-  // if single digit, pad with leading zero
+  if (digits.length >= 2) return digits.slice(0, 2);
   return digits.padStart(2, "0");
 }
 
 // --------------------------------------------------------
-// Tabs: HS6 / HS8 (just switches which chart/summary to show)
-// --------------------------------------------------------
-function setupTabs() {
-  var buttons = document.querySelectorAll(".tab-button");
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].addEventListener("click", function () {
-      // Switch active button
-      for (var j = 0; j < buttons.length; j++) {
-        buttons[j].classList.remove("active");
-      }
-      this.classList.add("active");
-
-      // Switch content
-      var tab = this.getAttribute("data-tab");
-      currentTab = tab;
-
-      var contents = document.querySelectorAll(".tab-content");
-      for (var k = 0; k < contents.length; k++) {
-        contents[k].classList.remove("active");
-      }
-      var activeDiv = document.getElementById("tab-" + tab);
-      if (activeDiv) activeDiv.classList.add("active");
-
-      // Redraw with current filters for the new visible tab
-      applyFilters();
-    });
-  }
-}
-
-// --------------------------------------------------------
-// Exporter checkbox dropdown behaviour
+// Exporter dropdown
 // --------------------------------------------------------
 function setupExporterDropdown() {
   var display = document.getElementById("exporterDisplay");
@@ -132,7 +94,7 @@ function updateExporterDisplayText() {
 }
 
 // --------------------------------------------------------
-// Load exporter options from exporter.csv
+// Load exporter list
 // --------------------------------------------------------
 function loadExporterOptions(callback) {
   Papa.parse(EXPORTER_PATH, {
@@ -142,7 +104,6 @@ function loadExporterOptions(callback) {
     complete: function (results) {
       exporterList = [];
       var seen = {};
-
       results.data.forEach(function (row) {
         var exp = (row.exporter || "").trim();
         if (!exp) return;
@@ -151,11 +112,9 @@ function loadExporterOptions(callback) {
           exporterList.push(exp);
         }
       });
-
       exporterList.sort();
       buildExporterCheckboxes();
       updateExporterDisplayText();
-
       if (typeof callback === "function") callback();
     },
     error: function (err) {
@@ -173,21 +132,19 @@ function buildExporterCheckboxes() {
   for (var i = 0; i < exporterList.length; i++) {
     var exp = exporterList[i];
     var label = document.createElement("label");
-    var cb    = document.createElement("input");
-    cb.type   = "checkbox";
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
     cb.className = "exporter-checkbox";
-    cb.value  = exp;
+    cb.value = exp;
 
     label.appendChild(cb);
     label.appendChild(document.createTextNode(" " + exp));
     exporterBox.appendChild(label);
   }
-
-  // You could pre-check some if needed here
 }
 
 // --------------------------------------------------------
-// Load ISIC options from isic2digit.csv
+// Load ISIC code list (only codes shown)
 // --------------------------------------------------------
 function loadIsicOptions(callback) {
   Papa.parse(ISIC_CODE_PATH, {
@@ -197,25 +154,18 @@ function loadIsicOptions(callback) {
     complete: function (results) {
       isicCodeList = [];
       var seen = {};
-
       results.data.forEach(function (row) {
         var raw = (row.isic4_2 || "").trim();
         var code2 = normalizeIsic2(raw);
         if (!code2) return;
-
         if (!seen[code2]) {
           seen[code2] = true;
-          isicCodeList.push({
-            code: code2,
-            description: (row.description || "").trim()
-          });
+          isicCodeList.push({ code: code2 });
         }
       });
-
       isicCodeList.sort(function (a, b) {
         return a.code.localeCompare(b.code);
       });
-
       buildIsicSelect();
       if (typeof callback === "function") callback();
     },
@@ -229,23 +179,18 @@ function loadIsicOptions(callback) {
 function buildIsicSelect() {
   var sel = document.getElementById("isicSelect");
   if (!sel) return;
-
-  // keep the first "All" option; append the rest
+  // keep the first "All"
   for (var i = 0; i < isicCodeList.length; i++) {
     var item = isicCodeList[i];
     var opt = document.createElement("option");
     opt.value = item.code;
-    if (item.description) {
-      opt.textContent = item.code + " — " + item.description;
-    } else {
-      opt.textContent = item.code;
-    }
+    opt.textContent = item.code; // code only
     sel.appendChild(opt);
   }
 }
 
 // --------------------------------------------------------
-// Load HS6 options from hs6code.csv
+// Load HS6 code list (only codes shown)
 // --------------------------------------------------------
 function loadHs6Options(callback) {
   Papa.parse(HS6_CODE_PATH, {
@@ -255,23 +200,17 @@ function loadHs6Options(callback) {
     complete: function (results) {
       hs6CodeList = [];
       var seen = {};
-
       results.data.forEach(function (row) {
         var code = (row.hs6code || "").trim();
         if (!code) return;
         if (!seen[code]) {
           seen[code] = true;
-          hs6CodeList.push({
-            code: code,
-            name: (row.hs6name || "").trim()
-          });
+          hs6CodeList.push({ code: code });
         }
       });
-
       hs6CodeList.sort(function (a, b) {
         return a.code.localeCompare(b.code);
       });
-
       buildHs6Select();
       if (typeof callback === "function") callback();
     },
@@ -285,23 +224,18 @@ function loadHs6Options(callback) {
 function buildHs6Select() {
   var sel = document.getElementById("hs6Select");
   if (!sel) return;
-
-  // keep the first "All" option; append the rest
+  // keep the first "All"
   for (var i = 0; i < hs6CodeList.length; i++) {
     var item = hs6CodeList[i];
     var opt = document.createElement("option");
     opt.value = item.code;
-    if (item.name) {
-      opt.textContent = item.code + " — " + item.name;
-    } else {
-      opt.textContent = item.code;
-    }
+    opt.textContent = item.code; // code only
     sel.appendChild(opt);
   }
 }
 
 // --------------------------------------------------------
-// Load tariff CSVs (ISIC or HS6) and map to unified structure
+// Load tariff CSV (ISIC or HS6)
 // --------------------------------------------------------
 function loadTariffCsv(path, mode, callback) {
   fetch(path)
@@ -319,17 +253,14 @@ function loadTariffCsv(path, mode, callback) {
 
       for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
-
         var d = new Date(row.date_eff);
-        if (isNaN(d.getTime())) {
-          continue; // skip invalid date
-        }
+        if (isNaN(d.getTime())) continue;
 
         var importer = (row.importer || "").trim();
         var exporter = (row.exporter || "").trim();
         var tariff   = parseFloat(row.tariffs || 0);
-        var importsThousand = parseFloat(row.importsvaluein1000usd || 0);
-        var tradeValue = isNaN(importsThousand) ? 0 : importsThousand * 1000;
+        var importsK = parseFloat(row.importsvaluein1000usd || 0);
+        var tradeValue = isNaN(importsK) ? 0 : importsK * 1000;
 
         var affectedTradeValue = parseFloat(row.affected_trade_value || 0);
         var affectedShare      = parseFloat(row.affected_trade_share || 0);
@@ -345,7 +276,7 @@ function loadTariffCsv(path, mode, callback) {
         mapped.push({
           importer: importer,
           exporter: exporter,
-          code: code,                      // ISIC2 or HS6
+          code: code,
           date: d,
           tariff: isNaN(tariff) ? 0 : tariff,
           tradeValue: isNaN(tradeValue) ? 0 : tradeValue,
@@ -358,7 +289,7 @@ function loadTariffCsv(path, mode, callback) {
       if (mode === "isic") {
         isicTariffData = mapped;
         isicTariffLoaded = true;
-      } else if (mode === "hs6") {
+      } else {
         hs6TariffData = mapped;
         hs6TariffLoaded = true;
       }
@@ -372,13 +303,10 @@ function loadTariffCsv(path, mode, callback) {
 }
 
 // --------------------------------------------------------
-// Apply filters based on controls
+// Apply filters and update chart + summary + EO
 // --------------------------------------------------------
 function applyFilters() {
-  if (!isicTariffLoaded || !hs6TariffLoaded) {
-    // Data not ready yet
-    return;
-  }
+  if (!isicTariffLoaded || !hs6TariffLoaded) return;
 
   var importerSel = document.getElementById("importerSelect");
   var isicSel     = document.getElementById("isicSelect");
@@ -386,31 +314,27 @@ function applyFilters() {
   var dateFromEl  = document.getElementById("dateFrom");
   var dateToEl    = document.getElementById("dateTo");
 
-  if (!importerSel || !isicSel || !hs6Sel) return;
+  var importerVal = importerSel ? importerSel.value : "";
+  var isicVal     = isicSel ? isicSel.value : "";
+  var hs6Val      = hs6Sel ? hs6Sel.value : "";
+  var dateFromVal = dateFromEl ? dateFromEl.value : "";
+  var dateToVal   = dateToEl ? dateToEl.value : "";
 
-  var importerVal = importerSel.value;
-  var isicVal     = isicSel.value;
-  var hs6Val      = hs6Sel.value;
-  var dateFromVal = dateFromEl.value;
-  var dateToVal   = dateToEl.value;
-
-  // Classification selection rule:
-  // - if both selected → show message & abort
-  // - if ISIC selected → use ISIC tariff data
-  // - if HS6 selected → use HS6 tariff data
-  // - if none selected → default to HS6 data (all products)
+  // Rule: if both ISIC and HS6 selected => stop
   if (isicVal && hs6Val) {
     alert("Please select only one classification (ISIC or HS6).");
     var eoDiv = document.getElementById("eoContent");
     if (eoDiv) {
       eoDiv.innerHTML = "<p>Please select only one classification (ISIC or HS6).</p>";
     }
+    // Hide tables
+    showISICSummaryTable(false);
+    showHS6SummaryTable(false);
     return;
   }
 
   var mode;
   var baseData;
-
   if (isicVal) {
     mode = "isic";
     baseData = isicTariffData;
@@ -418,7 +342,7 @@ function applyFilters() {
     mode = "hs6";
     baseData = hs6TariffData;
   } else {
-    // both empty → treat as ALL products, use HS6 file by default
+    // none selected => HS6 default
     mode = "hs6";
     baseData = hs6TariffData;
   }
@@ -435,45 +359,34 @@ function applyFilters() {
   }
   updateExporterDisplayText();
 
-  // Filter data
   var filtered = [];
   for (var j = 0; j < baseData.length; j++) {
     var row = baseData[j];
 
-    if (importerVal && row.importer !== importerVal) {
-      continue;
-    }
+    if (importerVal && row.importer !== importerVal) continue;
 
-    if (mode === "isic" && isicVal && row.code !== isicVal) {
-      continue;
-    }
-    if (mode === "hs6" && hs6Val && row.code !== hs6Val) {
-      continue;
-    }
+    if (mode === "isic" && isicVal && row.code !== isicVal) continue;
+    if (mode === "hs6"  && hs6Val  && row.code !== hs6Val)  continue;
 
     if (selectedExporters.length > 0 &&
-        selectedExporters.indexOf(row.exporter) === -1) {
-      continue;
-    }
+        selectedExporters.indexOf(row.exporter) === -1) continue;
 
     if (startDate && row.date < startDate) continue;
-    if (endDate   && row.date > endDate)   continue;
+    if (endDate && row.date > endDate) continue;
 
     filtered.push(row);
   }
 
-  // Draw chart and summary for the active tab (HS6 or HS8 containers)
-  drawChart(currentTab, filtered, selectedExporters);
-  updateSummary(currentTab, filtered, selectedExporters, mode, isicVal, hs6Val);
+  drawChartMain(filtered, selectedExporters);
+  updateSummary(mode, filtered);
   updateEOSection(mode, filtered, isicVal, hs6Val, importerVal, selectedExporters, dateFromVal, dateToVal);
 }
 
 // --------------------------------------------------------
-// Draw chart for active tab (HS6/HS8) — true date scaling
+// Main chart
 // --------------------------------------------------------
-function drawChart(tabId, data, selectedExporters) {
-  var chartDivId = (tabId === "hs6") ? "tariffChartHS6" : "tariffChartHS8";
-  var chartDiv = document.getElementById(chartDivId);
+function drawChartMain(data, selectedExporters) {
+  var chartDiv = document.getElementById("tariffChartMain");
   if (!chartDiv) return;
 
   if (!data || data.length === 0) {
@@ -487,13 +400,12 @@ function drawChart(tabId, data, selectedExporters) {
   var ticktext = [];
 
   if (worldMode) {
-    // Aggregate over all exporters per date
     var grouped = {};
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
-      var dateKey = d.date.toLocaleDateString("en-US");
-      if (!grouped[dateKey]) grouped[dateKey] = [];
-      grouped[dateKey].push(d.tariff);
+      var dk = d.date.toLocaleDateString("en-US");
+      if (!grouped[dk]) grouped[dk] = [];
+      grouped[dk].push(d.tariff);
     }
 
     var keys = Object.keys(grouped).sort(function (a, b) {
@@ -508,7 +420,6 @@ function drawChart(tabId, data, selectedExporters) {
       var sum = 0;
       for (var s = 0; s < arr.length; s++) sum += arr[s];
       var avg = arr.length ? sum / arr.length : 0;
-
       dates.push(new Date(k));
       values.push(avg);
     }
@@ -525,14 +436,12 @@ function drawChart(tabId, data, selectedExporters) {
       marker: { size: 8 }
     });
   } else {
-    // Multi-exporter lines
     var dateSet = {};
     for (var dIndex = 0; dIndex < data.length; dIndex++) {
       var d2 = data[dIndex];
-      var dk = d2.date.toLocaleDateString("en-US");
-      dateSet[dk] = true;
+      var dk2 = d2.date.toLocaleDateString("en-US");
+      dateSet[dk2] = true;
     }
-
     var sortedKeys = Object.keys(dateSet).sort(function (a, b) {
       return new Date(a) - new Date(b);
     });
@@ -546,14 +455,13 @@ function drawChart(tabId, data, selectedExporters) {
 
     for (var e = 0; e < selectedExporters.length; e++) {
       var exp = selectedExporters[e];
-
       var daily = {};
       for (var r = 0; r < data.length; r++) {
         var row = data[r];
         if (row.exporter !== exp) continue;
-        var dayKey = row.date.toLocaleDateString("en-US");
-        if (!daily[dayKey]) daily[dayKey] = [];
-        daily[dayKey].push(row.tariff);
+        var key = row.date.toLocaleDateString("en-US");
+        if (!daily[key]) daily[key] = [];
+        daily[key].push(row.tariff);
       }
 
       var yvals = [];
@@ -581,7 +489,7 @@ function drawChart(tabId, data, selectedExporters) {
   }
 
   var layout = {
-    title: (tabId === "hs6" ? "HS6" : "HS8") + " Tariff Trend",
+    title: "Tariff Trend",
     xaxis: {
       title: "Date",
       type: "date",
@@ -601,32 +509,75 @@ function drawChart(tabId, data, selectedExporters) {
 }
 
 // --------------------------------------------------------
-// Summary table (HS6 / HS8)
+// Summary tables (ISIC: 5 cols, HS6: 7 cols)
 // --------------------------------------------------------
+function showISICSummaryTable(show) {
+  var tISIC = document.getElementById("summaryTableISIC");
+  var tHS6  = document.getElementById("summaryTableHS6");
+  if (!tISIC || !tHS6) return;
+  tISIC.style.display = show ? "table" : "none";
+  if (show) tHS6.style.display = "none";
+}
+
+function showHS6SummaryTable(show) {
+  var tISIC = document.getElementById("summaryTableISIC");
+  var tHS6  = document.getElementById("summaryTableHS6");
+  if (!tISIC || !tHS6) return;
+  tHS6.style.display = show ? "table" : "none";
+  if (show) tISIC.style.display = "none";
+}
+
 function formatShare(value) {
   if (isNaN(value)) return "";
-  if (value <= 1) {
-    return (value * 100).toFixed(2) + "%";
-  }
+  if (value <= 1) return (value * 100).toFixed(2) + "%";
   return value.toFixed(2) + "%";
 }
 
-function updateSummary(tabId, data, selectedExporters, mode, isicVal, hs6Val) {
-  var tableId = (tabId === "hs6") ? "summaryTableHS6" : "summaryTableHS8";
-  var tbody = document.querySelector("#" + tableId + " tbody");
-  if (!tbody) return;
+function updateSummary(mode, data) {
+  var isicTableId = "summaryTableISIC";
+  var hs6TableId  = "summaryTableHS6";
+
+  if (mode === "isic") {
+    showISICSummaryTable(true);
+    showHS6SummaryTable(false);
+  } else {
+    showISICSummaryTable(false);
+    showHS6SummaryTable(true);
+  }
 
   if (!data || data.length === 0) {
-    if ($.fn.DataTable.isDataTable("#" + tableId)) {
-      $("#" + tableId).DataTable().destroy();
+    // No data: reset DataTables and show 1 row
+    if (mode === "isic") {
+      if ($.fn.DataTable.isDataTable("#" + isicTableId)) {
+        $("#" + isicTableId).DataTable().destroy();
+      }
+      var tbodyI = document.querySelector("#" + isicTableId + " tbody");
+      tbodyI.innerHTML =
+        "<tr>" +
+        "<td colspan='5' style='text-align:center;'>No data available</td>" +
+        "</tr>";
+      $("#" + isicTableId).DataTable({
+        paging: false,
+        searching: false,
+        info: false,
+        ordering: false
+      });
+    } else {
+      if ($.fn.DataTable.isDataTable("#" + hs6TableId)) {
+        $("#" + hs6TableId).DataTable().destroy();
+      }
+      var tbodyH = document.querySelector("#" + hs6TableId + " tbody");
+      tbodyH.innerHTML =
+        "<tr>" +
+        "<td colspan='7' style='text-align:center;'>No data available</td>" +
+        "</tr>";
+      $("#" + hs6TableId).DataTable({
+        paging: false,
+        searching: false,
+        info: false,
+        ordering: false
+      });
     }
-    tbody.innerHTML = "<tr><td colspan='7'>No data available</td></tr>";
-    $("#" + tableId).DataTable({
-      pageLength: 5,
-      searching: false,
-      info: false,
-      lengthChange: false
-    });
     return;
   }
 
@@ -653,7 +604,6 @@ function updateSummary(tabId, data, selectedExporters, mode, isicVal, hs6Val) {
     grouped[key].tariffs.push(d.tariff);
     grouped[key].weightedTariffs.push(d.tariff * d.tradeValue);
     grouped[key].tradeValues.push(d.tradeValue);
-
     grouped[key].affectedTradeValues.push(d.affectedTradeValue);
     grouped[key].affectedShares.push(d.affectedShare);
     grouped[key].lineShares.push(d.lineShare);
@@ -661,60 +611,100 @@ function updateSummary(tabId, data, selectedExporters, mode, isicVal, hs6Val) {
 
   var groups = Object.keys(grouped).map(function (k) { return grouped[k]; });
 
-  var htmlRows = "";
-  for (var gIndex = 0; gIndex < groups.length; gIndex++) {
-    var g = groups[gIndex];
+  if (mode === "isic") {
+    if ($.fn.DataTable.isDataTable("#" + isicTableId)) {
+      $("#" + isicTableId).DataTable().destroy();
+    }
+    var tbodyISIC = document.querySelector("#" + isicTableId + " tbody");
 
-    // Simple average tariff
-    var sumTar = 0;
-    for (var t = 0; t < g.tariffs.length; t++) sumTar += g.tariffs[t];
-    var simpleAvg = g.tariffs.length ? sumTar / g.tariffs.length : 0;
+    var htmlRowsI = "";
+    for (var gI = 0; gI < groups.length; gI++) {
+      var g = groups[gI];
 
-    // Trade-weighted average tariff
-    var sumVal = 0;
-    for (var v = 0; v < g.tradeValues.length; v++) sumVal += g.tradeValues[v];
+      var sumTar = 0;
+      for (var t = 0; t < g.tariffs.length; t++) sumTar += g.tariffs[t];
+      var simpleAvg = g.tariffs.length ? sumTar / g.tariffs.length : 0;
 
-    var sumWV = 0;
-    for (var w = 0; w < g.weightedTariffs.length; w++) sumWV += g.weightedTariffs[w];
-    var tradeWeighted = sumVal ? sumWV / sumVal : 0;
+      var sumVal = 0;
+      for (var v = 0; v < g.tradeValues.length; v++) sumVal += g.tradeValues[v];
 
-    // Affected trade value
-    var sumAffectedVal = 0;
-    for (var av = 0; av < g.affectedTradeValues.length; av++) sumAffectedVal += g.affectedTradeValues[av];
+      var sumWV = 0;
+      for (var w = 0; w < g.weightedTariffs.length; w++) sumWV += g.weightedTariffs[w];
+      var tradeWeighted = sumVal ? sumWV / sumVal : 0;
 
-    // Average shares
-    var sumAS = 0;
-    for (var as = 0; as < g.affectedShares.length; as++) sumAS += g.affectedShares[as];
-    var avgShare = g.affectedShares.length ? sumAS / g.affectedShares.length : 0;
+      var sumAffected = 0;
+      for (var av = 0; av < g.affectedTradeValues.length; av++) sumAffected += g.affectedTradeValues[av];
 
-    var sumLS = 0;
-    for (var ls = 0; ls < g.lineShares.length; ls++) sumLS += g.lineShares[ls];
-    var avgLineShare = g.lineShares.length ? sumLS / g.lineShares.length : 0;
+      htmlRowsI +=
+        "<tr>" +
+        "<td>" + g.exporter + "</td>" +
+        "<td>" + g.date + "</td>" +
+        "<td>" + simpleAvg.toFixed(3) + "</td>" +
+        "<td>" + tradeWeighted.toFixed(3) + "</td>" +
+        "<td>" + sumAffected.toFixed(0) + "</td>" +
+        "</tr>";
+    }
 
-    htmlRows +=
-      "<tr>" +
-      "<td>" + g.exporter + "</td>" +
-      "<td>" + g.date + "</td>" +
-      "<td>" + simpleAvg.toFixed(3) + "</td>" +
-      "<td>" + tradeWeighted.toFixed(3) + "</td>" +
-      "<td>" + sumAffectedVal.toFixed(0) + "</td>" +
-      "<td>" + formatShare(avgShare) + "</td>" +
-      "<td>" + formatShare(avgLineShare) + "</td>" +
-      "</tr>";
+    tbodyISIC.innerHTML = htmlRowsI;
+    $("#" + isicTableId).DataTable({
+      pageLength: 5,
+      order: [[1, "asc"]]
+    });
+
+  } else { // HS6 mode
+    if ($.fn.DataTable.isDataTable("#" + hs6TableId)) {
+      $("#" + hs6TableId).DataTable().destroy();
+    }
+    var tbodyHS6 = document.querySelector("#" + hs6TableId + " tbody");
+
+    var htmlRowsH = "";
+    for (var gH = 0; gH < groups.length; gH++) {
+      var g2 = groups[gH];
+
+      var sumTar2 = 0;
+      for (var t2 = 0; t2 < g2.tariffs.length; t2++) sumTar2 += g2.tariffs[t2];
+      var simpleAvg2 = g2.tariffs.length ? sumTar2 / g2.tariffs.length : 0;
+
+      var sumVal2 = 0;
+      for (var v2 = 0; v2 < g2.tradeValues.length; v2++) sumVal2 += g2.tradeValues[v2];
+
+      var sumWV2 = 0;
+      for (var w2 = 0; w2 < g2.weightedTariffs.length; w2++) sumWV2 += g2.weightedTariffs[w2];
+      var tradeWeighted2 = sumVal2 ? sumWV2 / sumVal2 : 0;
+
+      var sumAffected2 = 0;
+      for (var av2 = 0; av2 < g2.affectedTradeValues.length; av2++) sumAffected2 += g2.affectedTradeValues[av2];
+
+      var sumAS2 = 0;
+      for (var as2 = 0; as2 < g2.affectedShares.length; as2++) sumAS2 += g2.affectedShares[as2];
+      var avgShare2 = g2.affectedShares.length ? sumAS2 / g2.affectedShares.length : 0;
+
+      var sumLS2 = 0;
+      for (var ls2 = 0; ls2 < g2.lineShares.length; ls2++) sumLS2 += g2.lineShares[ls2];
+      var avgLineShare2 = g2.lineShares.length ? sumLS2 / g2.lineShares.length : 0;
+
+      htmlRowsH +=
+        "<tr>" +
+        "<td>" + g2.exporter + "</td>" +
+        "<td>" + g2.date + "</td>" +
+        "<td>" + simpleAvg2.toFixed(3) + "</td>" +
+        "<td>" + tradeWeighted2.toFixed(3) + "</td>" +
+        "<td>" + sumAffected2.toFixed(0) + "</td>" +
+        "<td>" + formatShare(avgShare2) + "</td>" +
+        "<td>" + formatShare(avgLineShare2) + "</td>" +
+        "</tr>";
+    }
+
+    tbodyHS6.innerHTML = htmlRowsH;
+    $("#" + hs6TableId).DataTable({
+      pageLength: 5,
+      order: [[1, "asc"]]
+    });
   }
-
-  if ($.fn.DataTable.isDataTable("#" + tableId)) {
-    $("#" + tableId).DataTable().destroy();
-  }
-  tbody.innerHTML = htmlRows;
-  $("#" + tableId).DataTable({
-    pageLength: 5,
-    order: [[1, "asc"]]
-  });
 }
 
 // --------------------------------------------------------
-// Executive Order (EO) Documentation section
+// EO Documentation
 // --------------------------------------------------------
 function updateEOSection(mode, data, isicVal, hs6Val, importerVal, selectedExporters, dateFromVal, dateToVal) {
   var eoDiv = document.getElementById("eoContent");
@@ -750,7 +740,6 @@ function updateEOSection(mode, data, isicVal, hs6Val, importerVal, selectedExpor
     dateText = fromStr + " to " + toStr;
   }
 
-  // Very simple EO count: rows with non-zero affected trade value
   var eoCount = 0;
   for (var i = 0; i < data.length; i++) {
     if (data[i].affectedTradeValue && data[i].affectedTradeValue !== 0) {
@@ -766,4 +755,3 @@ function updateEOSection(mode, data, isicVal, hs6Val, importerVal, selectedExpor
     eoCount + ".</p>" +
     "<p>This documentation section can be extended with specific Executive Order references or detailed legal text underpinning the tariff actions reflected in the data.</p>";
 }
-

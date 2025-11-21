@@ -3,8 +3,8 @@
 // ========================================================
 
 // CSV paths
-var EXPORTER_PATH      = "data/exporter.csv";
-var ISIC_CODE_PATH     = "data/isic2digit.csv";
+var EXPORTER_PATH      = "data/exporters.csv";
+var ISIC_CODE_PATH     = "data/isic4_2_product_name.csv";
 var HS6_CODE_PATH      = "data/hs6code.csv";
 var ISIC_TARIFF_PATH   = "data/isic2tariff.csv";
 var HS6_TARIFF_PATH    = "data/hs6tariff.csv";
@@ -766,3 +766,4 @@ function updateEOSection(mode, data, isicVal, hs6Val, importerVal, selectedExpor
     eoCount + ".</p>" +
     "<p>This documentation section can be extended with specific Executive Order references or detailed legal text underpinning the tariff actions reflected in the data.</p>";
 }
+

@@ -9,7 +9,7 @@ $.fn.dataTable.ext.errMode = "none";
 // File paths
 // =============================================================
 const EXPORTER_PATH = "data/exporters.csv";
-const ISIC_CODES_PATH = "data/isic4_2_product_name.csv";
+const ISIC_CODES_PATH = "data/isic4_2_product_name.csv"; 
 const HS6_CODES_PATH = "data/hs6code.csv";
 const ISIC_TARIFF_PATH = "data/isic2tariff.csv";
 const HS6_TARIFF_PATH = "data/hs6tariff.csv";
@@ -27,7 +27,7 @@ let hs6TariffData = [];
 let isicLoaded = false;
 let hs6Loaded = false;
 
-const WORLD_IMPORTER_VALUE = "World";
+const WORLD_IMPORTER_VALUE = "World"; 
 
 // =============================================================
 // DOM READY
@@ -46,17 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
             isicLoaded = true;
             hs6Loaded = true;
 
-            document
-              .getElementById("importerSelect")
-              .addEventListener("change", importerChanged);
-
-            document
-              .getElementById("classSelect")
-              .addEventListener("change", classificationChanged);
-
-            document
-              .getElementById("applyFilters")
-              .addEventListener("click", applyFilters);
+            document.getElementById("importerSelect").addEventListener("change", importerChanged);
+            document.getElementById("classSelect").addEventListener("change", classificationChanged);
+            document.getElementById("applyFilters").addEventListener("click", applyFilters);
 
             initialLoadAndRender();
           });
@@ -70,21 +62,21 @@ document.addEventListener("DOMContentLoaded", () => {
 // INITIAL LOAD FUNCTION
 // =============================================================
 function initialLoadAndRender() {
+  // Default to World + HS6 on first render
   document.getElementById("importerSelect").value = WORLD_IMPORTER_VALUE;
   document.getElementById("classSelect").value = "hs6";
-  disableCodeDropdowns();
+  disableCodeDropdowns(); 
 
   const initialData = hs6TariffData;
   const initialClass = "hs6";
 
-  populateHs6Exporters(WORLD_IMPORTER_VALUE, initialData);
-
-  drawChart(initialData, [], true, initialClass, null);
+  populateHs6Exporters(WORLD_IMPORTER_VALUE, initialData); 
+  drawChart(initialData, [], true, initialClass, null); 
   updateSummary(initialClass, initialData);
   updateEO(initialClass, initialData, WORLD_IMPORTER_VALUE, [], "", "", null, null);
 
   enableHs6Only();
-  populateHs6(WORLD_IMPORTER_VALUE);
+  populateHs6(WORLD_IMPORTER_VALUE); 
 }
 
 // =============================================================
@@ -108,8 +100,8 @@ function resetExporterDisplay(text) {
 }
 
 function updateExporterDisplay() {
-  let cbs = document.querySelectorAll(".exporter-checkbox:checked");
-  let txt = document.getElementById("exporterDisplayText");
+  const cbs = document.querySelectorAll(".exporter-checkbox:checked");
+  const txt = document.getElementById("exporterDisplayText");
 
   if (!cbs.length) txt.textContent = "World (All Exporters)";
   else if (cbs.length === 1) txt.textContent = cbs[0].value;
@@ -124,11 +116,11 @@ function loadExporters(callback) {
     download: true,
     header: true,
     complete: (res) => {
-      let seen = {};
+      const seen = {};
       exporterList = [];
 
       res.data.forEach((r) => {
-        let e = (r.exporter || "").trim();
+        const e = (r.exporter || "").trim();
         if (e && !seen[e]) {
           seen[e] = true;
           exporterList.push(e);
@@ -146,12 +138,12 @@ function loadIsicCodes(callback) {
     download: true,
     header: true,
     complete: (res) => {
-      let seen = {};
+      const seen = {};
       isicCodes = [];
 
       res.data.forEach((r) => {
-        let raw = (r.isic4_2 || "").trim();
-        let two = normalizeIsic(raw);
+        const raw = (r.isic4_2 || "").trim(); 
+        const two = normalizeIsic(raw);
         if (two && !seen[two]) {
           seen[two] = true;
           isicCodes.push(two);
@@ -169,11 +161,11 @@ function loadHs6Codes(callback) {
     download: true,
     header: true,
     complete: (res) => {
-      let seen = {};
+      const seen = {};
       hs6Codes = [];
 
       res.data.forEach((r) => {
-        let code = (r.hs6code || "").trim();
+        const code = (r.hs6code || "").trim();
         if (code && !seen[code]) {
           seen[code] = true;
           hs6Codes.push(code);
@@ -188,7 +180,7 @@ function loadHs6Codes(callback) {
 
 function normalizeIsic(raw) {
   if (!raw) return "";
-  let d = raw.replace(/\D/g, "");
+  const d = raw.replace(/\D/g, "");
   if (!d) return "";
   if (d.length >= 2) return d.slice(0, 2);
   return d.padStart(2, "0");
@@ -203,40 +195,28 @@ function loadTariff(path, mode, callback) {
     header: true,
     skipEmptyLines: true,
     complete: (res) => {
-      let out = [];
+      const out = [];
 
       res.data.forEach((row) => {
-        let d = new Date(row.date_eff);
+        const d = new Date(row.date_eff);
         if (isNaN(d.getTime())) return;
 
-        let importer = (row.importer || "").trim();
-        let exporter = (row.exporter || "").trim();
+        const importer = (row.importer || "").trim();
+        const exporter = (row.exporter || "").trim();
+        const tariff = parseFloat(row.tariffs || 0) || 0;
 
-        let tariff = parseFloat(row.tariffs || 0) || 0;
+        const importsK = parseFloat(row.importsvaluein1000usd || 0) || 0;
+        const tradeValue = importsK * 1000;
 
-        let importsK = parseFloat(row.importsvaluein1000usd || 0) || 0;
-        let tradeValue = importsK * 1000;
+        const code = mode === "isic"
+          ? normalizeIsic(row.isic4_2 || "")
+          : (row.hs6 || "").trim();
 
-        let code =
-          mode === "isic"
-            ? normalizeIsic(row.isic4_2 || "")
-            : (row.hs6 || "").trim();
+        const affectedTv = parseFloat(row.affected_trade_value || 0) || 0;
+        const share = parseFloat(row.affected_trade_share || 0) || 0;
+        const lineShare = parseFloat(row.affected_hs6tariff_line_share || 0) || 0;
 
-        let affectedTv = parseFloat(row.affected_trade_value || 0) || 0;
-        let share = parseFloat(row.affected_trade_share || 0) || 0;
-        let lineShare = parseFloat(row.affected_hs6tariff_line_share || 0) || 0;
-
-        out.push({
-          importer,
-          exporter,
-          code,
-          date: d,
-          tariff,
-          tradeValue,
-          affectedTv,
-          share,
-          lineShare,
-        });
+        out.push({ importer, exporter, code, date: d, tariff, tradeValue, affectedTv, share, lineShare });
       });
 
       if (mode === "isic") isicTariffData = out;
@@ -251,7 +231,7 @@ function loadTariff(path, mode, callback) {
 // Importer / Classification Change Handlers
 // =============================================================
 function importerChanged() {
-  let importer = document.getElementById("importerSelect").value;
+  const importer = document.getElementById("importerSelect").value;
   let cls = document.getElementById("classSelect").value;
 
   resetExporterDisplay("Select Classification First");
@@ -260,13 +240,26 @@ function importerChanged() {
   document.getElementById("isicSelect").value = "";
   document.getElementById("hs6Select").value = "";
 
+  // --- Allow World + any classification (HS6 or ISIC) ---
   if (importer === WORLD_IMPORTER_VALUE) {
-    document.getElementById("classSelect").value = "hs6";
     resetExporterDisplay("World (All Exporters)");
-    applyFilters();
-    return;
-  }
+    // default to HS6 if no class chosen yet; otherwise use current
+    if (!cls) { document.getElementById("classSelect").value = "hs6"; cls = "hs6"; }
 
+    if (cls === "isic") {
+      enableIsicOnly();
+      populateIsic(WORLD_IMPORTER_VALUE);
+      populateIsicExporters(WORLD_IMPORTER_VALUE);
+    } else {
+      enableHs6Only();
+      populateHs6(WORLD_IMPORTER_VALUE);
+      populateHs6Exporters(WORLD_IMPORTER_VALUE);
+    }
+    applyFilters(); // render now for World
+    return; 
+  }
+  
+  // Specific importer + (maybe) selected classification
   if (importer && cls) {
     if (cls === "isic") {
       enableIsicOnly();
@@ -277,6 +270,7 @@ function importerChanged() {
       populateHs6(importer);
       populateHs6Exporters(importer);
     }
+    applyFilters();
   } else {
     document.getElementById("classSelect").value = "";
   }
@@ -287,39 +281,34 @@ function clearExporterList() {
 }
 
 function classificationChanged() {
-  let importer = document.getElementById("importerSelect").value;
-  let cls = document.getElementById("classSelect").value;
+  const importer = document.getElementById("importerSelect").value;
+  const cls = document.getElementById("classSelect").value;
 
   clearExporterList();
   disableCodeDropdowns();
 
-  if (!importer || importer === WORLD_IMPORTER_VALUE) {
-    alert(
-      "Please select a specific Importer country first to view its codes and exporters."
-    );
-    document.getElementById("classSelect").value = "";
+  // --- No blocker for World; handle both World and specific importers the same ---
+  if (cls === "isic") {
+    enableIsicOnly();
+    populateIsic(importer || WORLD_IMPORTER_VALUE);
+    populateIsicExporters(importer || WORLD_IMPORTER_VALUE);
+  } else if (cls === "hs6") {
+    enableHs6Only();
+    populateHs6(importer || WORLD_IMPORTER_VALUE);
+    populateHs6Exporters(importer || WORLD_IMPORTER_VALUE);
+  } else {
     return;
   }
 
-  if (cls === "isic") {
-    enableIsicOnly();
-    populateIsic(importer);
-    populateIsicExporters(importer);
-  }
-
-  if (cls === "hs6") {
-    enableHs6Only();
-    populateHs6(importer);
-    populateHs6Exporters(importer);
-  }
+  applyFilters(); // reflect the new class immediately
 }
 
 // =============================================================
 // Dropdown Enable/Disable
 // =============================================================
 function disableCodeDropdowns() {
-  let isic = document.getElementById("isicSelect");
-  let hs6 = document.getElementById("hs6Select");
+  const isic = document.getElementById("isicSelect");
+  const hs6 = document.getElementById("hs6Select");
 
   isic.disabled = true;
   hs6.disabled = true;
@@ -342,56 +331,41 @@ function enableHs6Only() {
 // Populate Dropdowns
 // =============================================================
 function populateIsic(importer) {
-  let sel = document.getElementById("isicSelect");
+  const sel = document.getElementById("isicSelect");
   sel.innerHTML = "<option value=''>All</option>";
 
-  let set = {};
+  const set = {};
+  const sourceData = importer === WORLD_IMPORTER_VALUE 
+    ? isicTariffData 
+    : isicTariffData.filter(r => r.importer === importer);
 
-  let sourceData =
-    importer === WORLD_IMPORTER_VALUE
-      ? isicTariffData
-      : isicTariffData.filter((r) => r.importer === importer);
+  sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
-  sourceData.forEach((r) => {
-    if (r.code) set[r.code] = true;
+  Object.keys(set).sort().forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
   });
-
-  Object.keys(set)
-    .sort()
-    .forEach((c) => {
-      let opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      sel.appendChild(opt);
-    });
 }
 
 function populateIsicExporters(importer, optionalData) {
-  let box = document.getElementById("exporterBox");
+  const box = document.getElementById("exporterBox");
   box.innerHTML = "";
 
-  let set = {};
+  const set = {};
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
+    ? isicTariffData 
+    : isicTariffData.filter(r => r.importer === importer));
 
-  let sourceData =
-    optionalData ||
-    (importer === WORLD_IMPORTER_VALUE
-      ? isicTariffData
-      : isicTariffData.filter((r) => r.importer === importer));
+  sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
-  sourceData.forEach((r) => {
-    if (r.exporter) set[r.exporter] = true;
-  });
-
-  let arr = Object.keys(set).sort();
-
-  if (!arr.length) {
-    resetExporterDisplay("No exporters found");
-    return;
-  }
+  const arr = Object.keys(set).sort();
+  if (!arr.length) { resetExporterDisplay("No exporters found"); return; }
 
   arr.forEach((exp) => {
-    let label = document.createElement("label");
-    let cb = document.createElement("input");
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.classList.add("exporter-checkbox");
     cb.value = exp;
@@ -406,56 +380,41 @@ function populateIsicExporters(importer, optionalData) {
 }
 
 function populateHs6(importer) {
-  let sel = document.getElementById("hs6Select");
+  const sel = document.getElementById("hs6Select");
   sel.innerHTML = "<option value=''>All</option>";
 
-  let set = {};
+  const set = {};
+  const sourceData = importer === WORLD_IMPORTER_VALUE 
+    ? hs6TariffData 
+    : hs6TariffData.filter(r => r.importer === importer);
 
-  let sourceData =
-    importer === WORLD_IMPORTER_VALUE
-      ? hs6TariffData
-      : hs6TariffData.filter((r) => r.importer === importer);
+  sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
-  sourceData.forEach((r) => {
-    if (r.code) set[r.code] = true;
+  Object.keys(set).sort().forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
   });
-
-  Object.keys(set)
-    .sort()
-    .forEach((c) => {
-      let opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      sel.appendChild(opt);
-    });
 }
 
 function populateHs6Exporters(importer, optionalData) {
-  let box = document.getElementById("exporterBox");
+  const box = document.getElementById("exporterBox");
   box.innerHTML = "";
 
-  let set = {};
+  const set = {};
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE 
+    ? hs6TariffData 
+    : hs6TariffData.filter(r => r.importer === importer));
+  
+  sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
-  let sourceData =
-    optionalData ||
-    (importer === WORLD_IMPORTER_VALUE
-      ? hs6TariffData
-      : hs6TariffData.filter((r) => r.importer === importer));
-
-  sourceData.forEach((r) => {
-    if (r.exporter) set[r.exporter] = true;
-  });
-
-  let arr = Object.keys(set).sort();
-
-  if (!arr.length) {
-    resetExporterDisplay("No exporters found");
-    return;
-  }
+  const arr = Object.keys(set).sort();
+  if (!arr.length) { resetExporterDisplay("No exporters found"); return; }
 
   arr.forEach((exp) => {
-    let label = document.createElement("label");
-    let cb = document.createElement("input");
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.classList.add("exporter-checkbox");
     cb.value = exp;
@@ -473,26 +432,13 @@ function populateHs6Exporters(importer, optionalData) {
 // APPLY FILTERS
 // =============================================================
 function applyFilters() {
-  let importer = document.getElementById("importerSelect").value;
-  let cls = document.getElementById("classSelect").value;
+  const importer = document.getElementById("importerSelect").value || WORLD_IMPORTER_VALUE;
+  const cls = document.getElementById("classSelect").value;
 
-  let isicC = document.getElementById("isicSelect").value;
-  let hs6C = document.getElementById("hs6Select").value;
+  const isicC = document.getElementById("isicSelect").value;
+  const hs6C = document.getElementById("hs6Select").value;
 
-  if (!cls) {
-    alert("Please select classification.");
-    return;
-  }
-
-  if (!importer) {
-    alert("Please select importer.");
-    return;
-  }
-
-  if (isicC && hs6C) {
-    alert("Please select only one classification.");
-    return;
-  }
+  if (!cls) { alert("Please select classification."); return; }
 
   let from = document.getElementById("dateFrom").value
     ? new Date(document.getElementById("dateFrom").value)
@@ -502,16 +448,13 @@ function applyFilters() {
     ? new Date(document.getElementById("dateTo").value)
     : null;
 
-  let selectedExp = [];
-  document.querySelectorAll(".exporter-checkbox:checked").forEach((x) =>
-    selectedExp.push(x.value)
-  );
-
+  const selectedExp = [];
+  document.querySelectorAll(".exporter-checkbox:checked").forEach((x) => selectedExp.push(x.value));
   const worldMode = selectedExp.length === 0;
 
-  let base = cls === "isic" ? isicTariffData : hs6TariffData;
+  const base = cls === "isic" ? isicTariffData : hs6TariffData;
 
-  let filtered = base.filter((r) => {
+  const filtered = base.filter((r) => {
     if (r.date && isNaN(r.date.getTime())) return false;
 
     if (importer !== WORLD_IMPORTER_VALUE && r.importer !== importer) return false;
@@ -528,15 +471,15 @@ function applyFilters() {
   });
 
   let selectedCode = null;
-  if (cls === "hs6" && hs6C) {
+  if (cls === 'hs6' && hs6C) {
     selectedCode = `HS6 Tariff Line ${hs6C}`;
-  } else if (cls === "isic" && isicC) {
+  } else if (cls === 'isic' && isicC) {
     selectedCode = `ISIC4 2 Digit Tariff Line ${isicC}`;
   } else {
-    selectedCode = cls === "hs6" ? "HS6 Tariff Line" : "ISIC4 2 Digit Tariff Line";
+    selectedCode = cls === 'hs6' ? 'HS6 Tariff Line' : 'ISIC4 2 Digit Tariff Line';
   }
-
-  drawChart(filtered, selectedExp, worldMode, cls, selectedCode);
+  
+  drawChart(filtered, selectedExp, worldMode, cls, selectedCode); 
   updateSummary(cls, filtered);
   updateEO(cls, filtered, importer, selectedExp, isicC, hs6C, from, to);
 }
@@ -545,46 +488,40 @@ function applyFilters() {
 // DRAW CHART
 // =============================================================
 function drawChart(data, exporters, worldMode, classification, codeTitle) {
-  var chartDiv = document.getElementById("tariffChartMain");
+  const chartDiv = document.getElementById("tariffChartMain");
 
   if (!data || data.length === 0) {
     Plotly.newPlot(chartDiv, [], { title: "No Data" });
     return;
   }
 
-  var traces = [];
-
-  let chartTitle;
-  if (codeTitle) {
-    chartTitle = `${codeTitle}`;
-  } else if (worldMode) {
-    chartTitle = "HS6 Tariff Line";
-  } else {
-    chartTitle = "Tariff Lines – Selected Exporters";
-  }
+  const traces = [];
+  const chartTitle = codeTitle
+    ? `${codeTitle}`
+    : worldMode
+      ? (classification === "isic" ? "ISIC4 2 Digit Tariff Line" : "HS6 Tariff Line")
+      : "Tariff Lines – Selected Exporters";
 
   if (worldMode) {
-    var grouped = {};
-
-    data.forEach(function (d) {
-      var ds = d.date.toLocaleDateString("en-US");
+    const grouped = {};
+    data.forEach((d) => {
+      const ds = d.date.toLocaleDateString("en-US"); 
       if (!grouped[ds]) grouped[ds] = [];
       grouped[ds].push(d.tariff);
     });
 
-    var allDates = [];
-    var allLabels = [];
-    var allValues = [];
+    const allDates = [];
+    const allLabels = [];
+    const allValues = [];
 
     Object.keys(grouped)
       .sort((a, b) => new Date(a) - new Date(b))
-      .forEach(function (key) {
+      .forEach((key) => {
         allDates.push(new Date(key));
         allLabels.push(key);
-
-        var arr = grouped[key];
-        var avgVal = arr.reduce((a, b) => a + b, 0) / arr.length;
-        allValues.push(avgVal);
+        const arr = grouped[key];
+        const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+        allValues.push(avg);
       });
 
     traces.push({
@@ -592,85 +529,62 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
       y: allValues,
       mode: "lines+markers",
       name: "World",
-      line: { shape: "hv", width: 3, color: "#003366" },
-      marker: { size: 8, color: "#003366" },
+      line: { shape: "hv", width: 3 },
+      marker: { size: 8 }
     });
 
-    var layout = {
+    const layout = {
       title: chartTitle,
-      xaxis: {
-        title: "Date",
-        type: "date",
-        tickmode: "array",
-        tickvals: allDates,
-        ticktext: allLabels,
-        tickangle: -45,
-      },
+      xaxis: { title: "Date", type: "date", tickmode: "array", tickvals: allDates, ticktext: allLabels, tickangle: -45 },
       yaxis: { title: "Tariff (%)" },
       font: { family: "Georgia, serif", size: 12 },
       plot_bgcolor: "#fff",
       paper_bgcolor: "#fff",
-      showlegend: false,
+      showlegend: false
     };
 
     Plotly.newPlot(chartDiv, traces, layout);
     return;
   }
 
-  var dateSet = new Set();
-  data.forEach((d) => dateSet.add(d.date.toLocaleDateString("en-US")));
+  const dateSet = new Set();
+  data.forEach(d => dateSet.add(d.date.toLocaleDateString("en-US")));
+  const allLabels = Array.from(dateSet).sort((a,b) => new Date(a) - new Date(b));
+  const allDates = allLabels.map(label => new Date(label));
 
-  var allLabels = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
-  var allDates = allLabels.map((label) => new Date(label));
-
-  exporters.forEach(function (exp) {
-    var rows = data.filter((d) => d.exporter === exp);
+  exporters.forEach((exp) => {
+    const rows = data.filter(d => d.exporter === exp);
     if (rows.length === 0) return;
 
-    var dailyMap = {};
-    rows.forEach((d) => {
-      var ds = d.date.toLocaleDateString("en-US");
+    const dailyMap = {};
+    rows.forEach(d => {
+      const ds = d.date.toLocaleDateString("en-US");
       if (!dailyMap[ds]) dailyMap[ds] = [];
       dailyMap[ds].push(d.tariff);
     });
 
-    var x = [];
-    var y = [];
-
-    allLabels.forEach(function (label) {
+    const x = [];
+    const y = [];
+    allLabels.forEach((label) => {
       if (dailyMap[label]) {
-        var arr = dailyMap[label];
-        var avgVal = arr.reduce((a, b) => a + b, 0) / arr.length;
+        const arr = dailyMap[label];
+        const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
         x.push(new Date(label));
-        y.push(avgVal);
+        y.push(avg);
       }
     });
 
-    traces.push({
-      x: x,
-      y: y,
-      mode: "lines+markers",
-      name: exp,
-      line: { shape: "hv", width: 3 },
-      marker: { size: 8 },
-    });
+    traces.push({ x, y, mode: "lines+markers", name: exp, line: { shape: "hv", width: 3 }, marker: { size: 8 } });
   });
 
-  var layout = {
+  const layout = {
     title: chartTitle,
-    xaxis: {
-      title: "Date",
-      type: "date",
-      tickmode: "array",
-      tickvals: allDates,
-      ticktext: allLabels,
-      tickangle: -45,
-    },
+    xaxis: { title: "Date", type: "date", tickmode: "array", tickvals: allDates, ticktext: allLabels, tickangle: -45 },
     yaxis: { title: "Tariff (%)" },
     font: { family: "Georgia, serif", size: 12 },
     plot_bgcolor: "#fff",
     paper_bgcolor: "#fff",
-    showlegend: true,
+    showlegend: true
   };
 
   Plotly.newPlot(chartDiv, traces, layout);
@@ -681,60 +595,37 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 // =============================================================
 function updateSummary(mode, data) {
   const $isic = $("#summaryTableISIC");
-  const $hs6 = $("#summaryTableHS6");
+  const $hs6  = $("#summaryTableHS6");
 
-  // keep tables; destroy instances only
-  if ($.fn.DataTable.isDataTable($isic)) {
-    $isic.DataTable().clear().destroy();
-  }
-  if ($.fn.DataTable.isDataTable($hs6)) {
-    $hs6.DataTable().clear().destroy();
-  }
+  if ($.fn.DataTable.isDataTable($isic)) { $isic.DataTable().clear().destroy(); }
+  if ($.fn.DataTable.isDataTable($hs6))  { $hs6.DataTable().clear().destroy(); }
 
-  // normalize both tables before refilling (prevents header/body spacing)
   [$isic, $hs6].forEach(($t) => {
     if (!$t || !$t.length) return;
-
     const tb = $t.find("tbody")[0];
     if (tb) tb.innerHTML = "";
-
-    // strip inline width/height/styles injected by previous DT
     $t.removeAttr("style");
-    $t.find("thead, tbody, tr, th, td").each(function () {
-      this.removeAttribute("style");
-    });
-
-    // restore table semantics; DT/scroll plugins sometimes set these to block
+    $t.find("thead, tbody, tr, th, td").each(function () { this.removeAttribute("style"); });
     $t.find("thead").css("display", "table-header-group");
     $t.find("tbody").css("display", "table-row-group");
   });
 
-  // show only the active table; init only on visible target (why: width calc)
   const $target = mode === "isic" ? $isic : $hs6;
-  const $other = mode === "isic" ? $hs6 : $isic;
+  const $other  = mode === "isic" ? $hs6  : $isic;
 
   $other.hide();
   $target.show();
 
   if (!data.length) return;
 
-  // group rows
   const grouped = {};
   data.forEach((r) => {
     const dkey = r.date.toLocaleDateString("en-US");
     const key = r.exporter + "_" + dkey;
 
     if (!grouped[key]) {
-      grouped[key] = {
-        exporter: r.exporter,
-        date: dkey,
-        tariffs: [],
-        weighted: [],
-        tv: [],
-        aff: [],
-      };
+      grouped[key] = { exporter: r.exporter, date: dkey, tariffs: [], weighted: [], tv: [], aff: [] };
     }
-
     grouped[key].tariffs.push(r.tariff);
     grouped[key].weighted.push(r.tariff * r.tradeValue);
     grouped[key].tv.push(r.tradeValue);
@@ -771,7 +662,6 @@ function updateSummary(mode, data) {
     }
   });
 
-  // init only the visible table; disable autoWidth to avoid injected widths
   $target.DataTable({
     pageLength: 5,
     autoWidth: false,
@@ -779,50 +669,32 @@ function updateSummary(mode, data) {
   });
 }
 
-function avg(a) {
-  if (!a.length) return 0;
-  return a.reduce((x, y) => x + y, 0) / a.length;
-}
-
-function sum(a) {
-  return a.reduce((x, y) => x + y, 0);
-}
-
-function weightedAvg(wv, tv) {
-  let sw = sum(wv);
-  let st = sum(tv);
-  if (!st) return 0;
-  return sw / st;
-}
+function avg(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
+function sum(a) { return a.reduce((x, y) => x + y, 0); }
+function weightedAvg(wv, tv) { const sw = sum(wv), st = sum(tv); return st ? sw / st : 0; }
 
 // =============================================================
 // EO SECTION
 // =============================================================
 function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
-  let div = document.getElementById("eoContent");
+  const div = document.getElementById("eoContent");
 
   if (!data.length) {
     div.innerHTML = "<p>No EO-related data.</p>";
     return;
   }
 
-  let clsTxt = mode === "isic" ? `ISIC ${isicC || "All"}` : `HS6 ${hs6C || "All"}`;
-
-  let expTxt =
-    exporters.length === 0
-      ? "World"
-      : exporters.length === 1
-      ? exporters[0]
-      : `${exporters.length} exporters`;
+  const clsTxt = mode === "isic" ? `ISIC ${isicC || "All"}` : `HS6 ${hs6C || "All"}`;
+  const expTxt = exporters.length === 0 ? "World" : (exporters.length === 1 ? exporters[0] : `${exporters.length} exporters`);
 
   let dt = "All Dates";
   if (from || to) {
-    let f = from ? from.toLocaleDateString("en-US") : "…";
-    let t = to ? to.toLocaleDateString("en-US") : "…";
+    const f = from ? from.toLocaleDateString("en-US") : "…";
+    const t = to ? to.toLocaleDateString("en-US") : "…";
     dt = `${f} → ${t}`;
   }
 
-  let eoCount = data.filter((x) => x.affectedTv > 0).length;
+  const eoCount = data.filter((x) => x.affectedTv > 0).length;
 
   div.innerHTML = `
     <p><strong>Importer:</strong> ${importer}</p>

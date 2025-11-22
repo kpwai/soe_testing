@@ -9,7 +9,7 @@ $.fn.dataTable.ext.errMode = "none";
 // File paths
 // =============================================================
 const EXPORTER_PATH   = "data/exporters.csv";
-const ISIC_CODES_PATH = "data/isic4_2_product_name.csv";
+const ISIC_CODES_PATH = "data/isic4_2_product_name.csv"; 
 const HS6_CODES_PATH  = "data/hs6code.csv";
 const ISIC_TARIFF_PATH= "data/isic2tariff.csv";
 const HS6_TARIFF_PATH = "data/hs6tariff.csv";
@@ -101,7 +101,6 @@ function resetExporterDisplay(text) {
 function updateExporterDisplay() {
   const cbs = document.querySelectorAll(".exporter-checkbox:checked");
   const txt = document.getElementById("exporterDisplayText");
-
   if (!cbs.length) txt.textContent = "World (All Exporters)";
   else if (cbs.length === 1) txt.textContent = cbs[0].value;
   else txt.textContent = `${cbs.length} exporters selected`;
@@ -135,7 +134,7 @@ function loadIsicCodes(callback) {
       const seen = {};
       isicCodes = [];
       res.data.forEach((r) => {
-        const raw = (r.isic4_2 || "").trim();
+        const raw = (r.isic4_2 || "").trim(); 
         const two = normalizeIsic(raw);
         if (two && !seen[two]) { seen[two] = true; isicCodes.push(two); }
       });
@@ -180,7 +179,6 @@ function loadTariff(path, mode, callback) {
     skipEmptyLines: true,
     complete: (res) => {
       const out = [];
-
       res.data.forEach((row) => {
         const d = new Date(row.date_eff);
         if (isNaN(d.getTime())) return;
@@ -192,11 +190,9 @@ function loadTariff(path, mode, callback) {
         const importsK = parseFloat(row.importsvaluein1000usd || 0) || 0;
         const tradeValue = importsK * 1000;
 
-        const code = mode === "isic"
-          ? normalizeIsic(row.isic4_2 || "")
-          : (row.hs6 || "").trim();
+        const code = mode === "isic" ? normalizeIsic(row.isic4_2 || "") : (row.hs6 || "").trim();
 
-        // Keep raw shares; may be fraction (0..1) or percent (0..100)
+        // Keep raw shares as-is (fraction 0..1 or percent 0..100)
         const share     = parseFloat(row.affected_trade_share || 0) || 0;
         const lineShare = parseFloat(row.affected_hs6tariff_line_share || 0) || 0;
 
@@ -320,7 +316,7 @@ function populateIsic(importer) {
   sel.innerHTML = "<option value=''>All</option>";
 
   const set = {};
-  const sourceData = importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter(r => r.importer === importer);
+  const sourceData = importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter((r) => r.importer === importer);
   sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
   Object.keys(set).sort().forEach((c) => {
@@ -335,7 +331,7 @@ function populateIsicExporters(importer, optionalData) {
   box.innerHTML = "";
 
   const set = {};
-  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter(r => r.importer === importer));
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter((r) => r.importer === importer));
   sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
   const arr = Object.keys(set).sort();
@@ -358,7 +354,7 @@ function populateHs6(importer) {
   sel.innerHTML = "<option value=''>All</option>";
 
   const set = {};
-  const sourceData = importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter(r => r.importer === importer);
+  const sourceData = importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter((r) => r.importer === importer);
   sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
   Object.keys(set).sort().forEach((c) => {
@@ -373,7 +369,7 @@ function populateHs6Exporters(importer, optionalData) {
   box.innerHTML = "";
 
   const set = {};
-  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter(r => r.importer === importer));
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter((r) => r.importer === importer));
   sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
   const arr = Object.keys(set).sort();
@@ -536,19 +532,24 @@ function updateSummary(mode, data) {
   const $isic = $("#summaryTableISIC");
   const $hs6  = $("#summaryTableHS6");
 
+  // teardown (keep table nodes)
   if ($.fn.DataTable.isDataTable($isic)) $isic.DataTable().clear().destroy();
-  if ($$.fn && $.fn.DataTable.isDataTable($hs6)) $hs6.DataTable().clear().destroy();
+  if ($.fn.DataTable.isDataTable($hs6))  $hs6.DataTable().clear().destroy();
 
+  // normalize DOM (remove stale styles, ensure tbody)
   [$isic, $hs6].forEach(($t) => {
     if (!$t || !$t.length) return;
-    const tb = $t.find("tbody")[0];
-    if (tb) tb.innerHTML = "";
+    if ($t.find("tbody").length === 0) $t.append("<tbody></tbody>");
+    $t.find("tbody")[0].innerHTML = "";
+
     $t.removeAttr("style");
     $t.find("thead, tbody, tr, th, td").each(function () { this.removeAttribute("style"); });
+
     $t.find("thead").css("display", "table-header-group");
     $t.find("tbody").css("display", "table-row-group");
   });
 
+  // enforce 7 headers on both tables
   ensureHeader7Cols("#summaryTableISIC");
   ensureHeader7Cols("#summaryTableHS6");
 
@@ -558,9 +559,12 @@ function updateSummary(mode, data) {
   $other.hide();
   $target.show();
 
-  if (!data.length) return;
+  if (!data || !data.length) {
+    $target.DataTable({ pageLength: 5, autoWidth: false, deferRender: true });
+    return;
+  }
 
-  // group
+  // group by (exporter,date)
   const grouped = {};
   data.forEach((r) => {
     const dkey = r.date.toLocaleDateString("en-US");
@@ -583,18 +587,19 @@ function updateSummary(mode, data) {
     grouped[key].weighted.push(r.tariff * r.tradeValue);
     grouped[key].tv.push(r.tradeValue);
     grouped[key].aff.push(r.affectedTv);
-    grouped[key].share.push(r.share);
-    grouped[key].line.push(r.lineShare);
+    grouped[key].share.push(r.share);       // affected_trade_share
+    grouped[key].line.push(r.lineShare);    // affected_hs6tariff_line_share
   });
 
   const rows = Object.values(grouped);
   const $tbody = $target.find("tbody");
-  const isISIC = mode === "isic";
 
+  const isISIC = mode === "isic";
   rows.forEach((g) => {
     if (isISIC) {
-      const affSharePct  = weightedSharePercent(g.share, g.tv);           // from affected_trade_share
-      const lineSharePct = avg(g.line.map(normalizeFraction)) * 100 || 0; // from affected_hs6tariff_line_share
+      const affSharePct  = weightedSharePercent(g.share, g.tv);                 // 0..100
+      const lineSharePct = avg(g.line.map(normalizeFraction)) * 100 || 0;       // 0..100
+
       $tbody.append(`
         <tr>
           <td>${g.exporter}</td>
@@ -607,7 +612,7 @@ function updateSummary(mode, data) {
         </tr>
       `);
     } else {
-      // HS6: force last two columns to 100%
+      // HS6: last two columns are 100%
       $tbody.append(`
         <tr>
           <td>${g.exporter}</td>
@@ -629,14 +634,13 @@ function updateSummary(mode, data) {
   });
 }
 
-// Ensure any target table has a 7-col header
+// Ensure target table has a 7-col header
 function ensureHeader7Cols(selector) {
   const table = document.querySelector(selector);
   if (!table) return;
-  const thead = table.querySelector("thead");
-  if (!thead) return;
-  const thCount = thead.querySelectorAll("th").length;
-  if (thCount === 7) return;
+  const thead = table.querySelector("thead") || table.createTHead();
+  const ths = thead.querySelectorAll("th");
+  if (ths.length === 7) return;
   thead.innerHTML = `
     <tr>
       <th>Exporter</th>
@@ -649,33 +653,6 @@ function ensureHeader7Cols(selector) {
     </tr>
   `;
 }
-
-// =============================================================
-// Helpers
-// =============================================================
-function avg(a) { return a && a.length ? a.reduce((x, y) => x + (Number(y)||0), 0) / a.length : 0; }
-function sum(a) { return (a || []).reduce((x, y) => x + (Number(y)||0), 0); }
-function weightedAvg(wv, tv) {
-  const n = Math.min(wv.length, tv.length);
-  let sw = 0, st = 0;
-  for (let i = 0; i < n; i++) { const w = Number(wv[i]) || 0, t = Number(tv[i]) || 0; sw += w; st += t; }
-  return st ? sw / st : 0;
-}
-// Accepts fraction (0..1) or percent (0..100) and returns fraction
-function normalizeFraction(v) { const n = Number(v) || 0; return n > 1 ? n / 100 : n; }
-// Weighted share (0..100) from affected_trade_share using trade values
-function weightedSharePercent(shares, tv) {
-  const n = Math.min(shares.length, tv.length);
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) {
-    const s = normalizeFraction(shares[i]);
-    const t = Number(tv[i]) || 0;
-    num += s * t;
-    den += t;
-  }
-  return den ? (num / den) * 100 : 0;
-}
-function toFixedSafe(v, d) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(d) : (0).toFixed(d); }
 
 // =============================================================
 // EO SECTION
@@ -708,3 +685,29 @@ function updateEO(mode, data, importer, exporters, isicC, hs6C, from, to) {
     <p><strong>EO-related actions:</strong> ${eoCount}</p>
   `;
 }
+
+// =============================================================
+// Helpers (math + formatting)
+// =============================================================
+function avg(a) { return a && a.length ? a.reduce((x, y) => x + (Number(y)||0), 0) / a.length : 0; }
+function sum(a) { return (a || []).reduce((x, y) => x + (Number(y)||0), 0); }
+function weightedAvg(wv, tv) {
+  const n = Math.min(wv.length, tv.length);
+  let sw = 0, st = 0;
+  for (let i = 0; i < n; i++) { const w = Number(wv[i])||0, t = Number(tv[i])||0; sw += w; st += t; }
+  return st ? sw / st : 0;
+}
+// Accepts fraction (0..1) or percent (0..100) and returns fraction
+function normalizeFraction(v) { const n = Number(v) || 0; return n > 1 ? n / 100 : n; }
+// Weighted share (0..100) from affected_trade_share using trade values
+function weightedSharePercent(shares, tv) {
+  const n = Math.min(shares.length, tv.length);
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    const s = normalizeFraction(shares[i]);
+    const t = Number(tv[i]) || 0;
+    num += s * t; den += t;
+  }
+  return den ? (num / den) * 100 : 0;
+}
+function toFixedSafe(v, d) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(d) : (0).toFixed(d); }

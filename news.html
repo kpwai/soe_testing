@@ -139,6 +139,22 @@
       text-align: left;
     }
 
+    /* One country per line in the dropdown */
+    .checkbox-panel label {
+      display: block;          /* force a new line for each option */
+      padding: 4px 0;
+      cursor: pointer;
+      line-height: 1.25;
+      text-align: left;
+      white-space: normal;     /* wrap long country names */
+      word-break: break-word;
+    }
+
+  .checkbox-panel label input[type="checkbox"] {
+    margin-right: 8px;       /* space between box and text */
+    vertical-align: middle;  /* align with text baseline */
+  }
+
     table.summaryTable {
       width: 100%;
       border-collapse: collapse;

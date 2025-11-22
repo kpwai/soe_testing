@@ -420,9 +420,9 @@ function applyFilters() {
   });
 
   const selectedCode =
-    cls === "hs6" && hs6C ? `HS6 Tariff Line ${hs6C}` :
-    cls === "isic" && isicC ? `ISIC4 2 Digit Tariff Line ${isicC}` :
-    cls === "hs6" ? "HS6 Tariff Line" : "ISIC4 2 Digit Tariff Line";
+    cls === "hs6" && hs6C ? `HS 6-Digits Tariff Line ${hs6C}` :
+    cls === "isic" && isicC ? `ISIC4 2-Digits Tariff Line ${isicC}` :
+    cls === "hs6" ? "HS 6-Digits Tariff Line" : "ISIC4 2-Digits Tariff Line";
 
   drawChart(filtered, selectedExp, worldMode, cls, selectedCode);
   updateSummary(cls, filtered);
@@ -444,7 +444,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
   const chartTitle = codeTitle
     ? `${codeTitle}`
     : worldMode
-      ? (classification === "isic" ? "ISIC4 2 Digit Tariff Line" : "HS6 Tariff Line")
+      ? (classification === "isic" ? "ISIC4 2-Digits Tariff Line" : "HS 6-Digits Tariff Line")
       : "Tariff Lines – Selected Exporters";
 
   if (worldMode) {
@@ -718,5 +718,6 @@ function weightedSharePercent(shares, tv) {
   return den ? (num / den) * 100 : 0;
 }
 function toFixedSafe(v, d) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(d) : (0).toFixed(d); }
+
 
 

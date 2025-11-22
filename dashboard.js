@@ -117,15 +117,10 @@ function loadExporters(callback) {
     complete: (res) => {
       const seen = {};
       exporterList = [];
-
       res.data.forEach((r) => {
         const e = (r.exporter || "").trim();
-        if (e && !seen[e]) {
-          seen[e] = true;
-          exporterList.push(e);
-        }
+        if (e && !seen[e]) { seen[e] = true; exporterList.push(e); }
       });
-
       exporterList.sort();
       if (callback) callback();
     },
@@ -139,16 +134,11 @@ function loadIsicCodes(callback) {
     complete: (res) => {
       const seen = {};
       isicCodes = [];
-
       res.data.forEach((r) => {
         const raw = (r.isic4_2 || "").trim();
         const two = normalizeIsic(raw);
-        if (two && !seen[two]) {
-          seen[two] = true;
-          isicCodes.push(two);
-        }
+        if (two && !seen[two]) { seen[two] = true; isicCodes.push(two); }
       });
-
       isicCodes.sort();
       if (callback) callback();
     },
@@ -162,15 +152,10 @@ function loadHs6Codes(callback) {
     complete: (res) => {
       const seen = {};
       hs6Codes = [];
-
       res.data.forEach((r) => {
         const code = (r.hs6code || "").trim();
-        if (code && !seen[code]) {
-          seen[code] = true;
-          hs6Codes.push(code);
-        }
+        if (code && !seen[code]) { seen[code] = true; hs6Codes.push(code); }
       });
-
       hs6Codes.sort();
       if (callback) callback();
     },
@@ -211,22 +196,15 @@ function loadTariff(path, mode, callback) {
           ? normalizeIsic(row.isic4_2 || "")
           : (row.hs6 || "").trim();
 
-        // Use these two columns as provided
-        const share = parseFloat(row.affected_trade_share || 0) || 0;              // fraction or percent
-        const lineShare = parseFloat(row.affected_hs6tariff_line_share || 0) || 0; // fraction or percent
+        // Keep raw shares; may be fraction (0..1) or percent (0..100)
+        const share     = parseFloat(row.affected_trade_share || 0) || 0;
+        const lineShare = parseFloat(row.affected_hs6tariff_line_share || 0) || 0;
 
         const affectedTv = parseFloat(row.affected_trade_value || 0) || 0;
 
         out.push({
-          importer,
-          exporter,
-          code,
-          date: d,
-          tariff,
-          tradeValue,
-          affectedTv,
-          share,
-          lineShare,
+          importer, exporter, code, date: d,
+          tariff, tradeValue, affectedTv, share, lineShare,
         });
       });
 
@@ -315,7 +293,7 @@ function classificationChanged() {
 // =============================================================
 function disableCodeDropdowns() {
   const isic = document.getElementById("isicSelect");
-  const hs6 = document.getElementById("hs6Select");
+  const hs6  = document.getElementById("hs6Select");
 
   isic.disabled = true;
   hs6.disabled = true;
@@ -342,16 +320,12 @@ function populateIsic(importer) {
   sel.innerHTML = "<option value=''>All</option>";
 
   const set = {};
-  const sourceData = importer === WORLD_IMPORTER_VALUE
-    ? isicTariffData
-    : isicTariffData.filter((r) => r.importer === importer);
-
+  const sourceData = importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter(r => r.importer === importer);
   sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
   Object.keys(set).sort().forEach((c) => {
     const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
+    opt.value = c; opt.textContent = c;
     sel.appendChild(opt);
   });
 }
@@ -361,10 +335,7 @@ function populateIsicExporters(importer, optionalData) {
   box.innerHTML = "";
 
   const set = {};
-  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE
-    ? isicTariffData
-    : isicTariffData.filter((r) => r.importer === importer));
-
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? isicTariffData : isicTariffData.filter(r => r.importer === importer));
   sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
   const arr = Object.keys(set).sort();
@@ -373,13 +344,9 @@ function populateIsicExporters(importer, optionalData) {
   arr.forEach((exp) => {
     const label = document.createElement("label");
     const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.classList.add("exporter-checkbox");
-    cb.value = exp;
+    cb.type = "checkbox"; cb.classList.add("exporter-checkbox"); cb.value = exp;
     cb.addEventListener("change", updateExporterDisplay);
-
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(" " + exp));
+    label.appendChild(cb); label.appendChild(document.createTextNode(" " + exp));
     box.appendChild(label);
   });
 
@@ -391,16 +358,12 @@ function populateHs6(importer) {
   sel.innerHTML = "<option value=''>All</option>";
 
   const set = {};
-  const sourceData = importer === WORLD_IMPORTER_VALUE
-    ? hs6TariffData
-    : hs6TariffData.filter((r) => r.importer === importer);
-
+  const sourceData = importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter(r => r.importer === importer);
   sourceData.forEach((r) => { if (r.code) set[r.code] = true; });
 
   Object.keys(set).sort().forEach((c) => {
     const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
+    opt.value = c; opt.textContent = c;
     sel.appendChild(opt);
   });
 }
@@ -410,10 +373,7 @@ function populateHs6Exporters(importer, optionalData) {
   box.innerHTML = "";
 
   const set = {};
-  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE
-    ? hs6TariffData
-    : hs6TariffData.filter((r) => r.importer === importer));
-
+  const sourceData = optionalData || (importer === WORLD_IMPORTER_VALUE ? hs6TariffData : hs6TariffData.filter(r => r.importer === importer));
   sourceData.forEach((r) => { if (r.exporter) set[r.exporter] = true; });
 
   const arr = Object.keys(set).sort();
@@ -422,13 +382,9 @@ function populateHs6Exporters(importer, optionalData) {
   arr.forEach((exp) => {
     const label = document.createElement("label");
     const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.classList.add("exporter-checkbox");
-    cb.value = exp;
+    cb.type = "checkbox"; cb.classList.add("exporter-checkbox"); cb.value = exp;
     cb.addEventListener("change", updateExporterDisplay);
-
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(" " + exp));
+    label.appendChild(cb); label.appendChild(document.createTextNode(" " + exp));
     box.appendChild(label);
   });
 
@@ -443,7 +399,7 @@ function applyFilters() {
   const cls = document.getElementById("classSelect").value;
 
   const isicC = document.getElementById("isicSelect").value;
-  const hs6C = document.getElementById("hs6Select").value;
+  const hs6C  = document.getElementById("hs6Select").value;
 
   if (!cls) { alert("Please select classification."); return; }
 
@@ -547,9 +503,7 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
       dailyMap[ds].push(d.tariff);
     });
 
-    const x = [];
-    const y = [];
-
+    const x = [], y = [];
     allLabels.forEach((label) => {
       if (dailyMap[label]) {
         const arr = dailyMap[label];
@@ -576,14 +530,14 @@ function drawChart(data, exporters, worldMode, classification, codeTitle) {
 }
 
 // =============================================================
-// SUMMARY TABLE (7 cols for ISIC and HS6; shares from two columns)
+// SUMMARY TABLE (ISIC computes shares; HS6 last two cols = 100%)
 // =============================================================
 function updateSummary(mode, data) {
   const $isic = $("#summaryTableISIC");
   const $hs6  = $("#summaryTableHS6");
 
   if ($.fn.DataTable.isDataTable($isic)) $isic.DataTable().clear().destroy();
-  if ($.fn.DataTable.isDataTable($hs6))  $hs6.DataTable().clear().destroy();
+  if ($$.fn && $.fn.DataTable.isDataTable($hs6)) $hs6.DataTable().clear().destroy();
 
   [$isic, $hs6].forEach(($t) => {
     if (!$t || !$t.length) return;
@@ -606,10 +560,12 @@ function updateSummary(mode, data) {
 
   if (!data.length) return;
 
+  // group
   const grouped = {};
   data.forEach((r) => {
     const dkey = r.date.toLocaleDateString("en-US");
     const key  = r.exporter + "_" + dkey;
+
     if (!grouped[key]) {
       grouped[key] = {
         exporter: r.exporter,
@@ -622,6 +578,7 @@ function updateSummary(mode, data) {
         line: [],
       };
     }
+
     grouped[key].tariffs.push(r.tariff);
     grouped[key].weighted.push(r.tariff * r.tradeValue);
     grouped[key].tv.push(r.tradeValue);
@@ -632,22 +589,37 @@ function updateSummary(mode, data) {
 
   const rows = Object.values(grouped);
   const $tbody = $target.find("tbody");
+  const isISIC = mode === "isic";
 
   rows.forEach((g) => {
-    const affSharePct  = weightedSharePercent(g.share, g.tv);                 // from affected_trade_share
-    const lineSharePct = avg(g.line.map(normalizeFraction)) * 100 || 0;       // from affected_hs6tariff_line_share
-
-    $tbody.append(`
-      <tr>
-        <td>${g.exporter}</td>
-        <td>${g.date}</td>
-        <td>${toFixedSafe(avg(g.tariffs), 2)}</td>
-        <td>${toFixedSafe(weightedAvg(g.weighted, g.tv), 2)}</td>
-        <td>${toFixedSafe(sum(g.aff), 0)}</td>
-        <td>${toFixedSafe(affSharePct, 2)}%</td>
-        <td>${toFixedSafe(lineSharePct, 2)}%</td>
-      </tr>
-    `);
+    if (isISIC) {
+      const affSharePct  = weightedSharePercent(g.share, g.tv);           // from affected_trade_share
+      const lineSharePct = avg(g.line.map(normalizeFraction)) * 100 || 0; // from affected_hs6tariff_line_share
+      $tbody.append(`
+        <tr>
+          <td>${g.exporter}</td>
+          <td>${g.date}</td>
+          <td>${toFixedSafe(avg(g.tariffs), 2)}</td>
+          <td>${toFixedSafe(weightedAvg(g.weighted, g.tv), 2)}</td>
+          <td>${toFixedSafe(sum(g.aff), 0)}</td>
+          <td>${toFixedSafe(affSharePct, 2)}%</td>
+          <td>${toFixedSafe(lineSharePct, 2)}%</td>
+        </tr>
+      `);
+    } else {
+      // HS6: force last two columns to 100%
+      $tbody.append(`
+        <tr>
+          <td>${g.exporter}</td>
+          <td>${g.date}</td>
+          <td>${toFixedSafe(avg(g.tariffs), 2)}</td>
+          <td>${toFixedSafe(weightedAvg(g.weighted, g.tv), 2)}</td>
+          <td>${toFixedSafe(sum(g.aff), 0)}</td>
+          <td>100%</td>
+          <td>100%</td>
+        </tr>
+      `);
+    }
   });
 
   $target.DataTable({
